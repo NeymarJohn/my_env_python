@@ -1,4 +1,4 @@
-#!/usr/bin/env bash -e
+#!/bin/bash -e
 
 read_version_file() {
   egrep -m 1 '[^[:space:]]' "$1"

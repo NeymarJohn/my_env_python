@@ -1,4 +1,4 @@
-#!/usr/bin/env bash -e
+#!/bin/bash -e
 
 RBENV_VERSION="$1"
 if [ -z "$RBENV_VERSION" ]; then
