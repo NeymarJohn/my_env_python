@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-set -e
+#!/usr/bin/env bash -e
 
 print_set_version() {
   echo "<version> should be a string matching a Ruby version known by rbenv."
