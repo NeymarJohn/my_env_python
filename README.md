@@ -42,8 +42,8 @@ tools that do one thing well.
    * [1 How It Works](#section_1)
    * [2 Installation](#section_2)
    * [3 Usage](#section_3)
-      * [3.1 default](#section_3.1)
-      * [3.2 local](#section_3.2)
+      * [3.1 set-default](#section_3.1)
+      * [3.2 set-local](#section_3.2)
       * [3.3 versions](#section_3.3)
       * [3.4 version](#section_3.4)
       * [3.5 rehash](#section_3.5)
@@ -122,32 +122,26 @@ when installing a gem that provides a binary).
 Like `git`, the `rbenv` command delegates to subcommands based on its
 first argument. The most common subcommands are:
 
-### <a name="section_3.1"></a> 3.1 default
+### <a name="section_3.1"></a> 3.1 set-default
 
 Sets the default version of Ruby to be used in all shells by writing
 the version name to the `~/.rbenv/default` file. This version can be
 overridden by a per-project `.rbenv-version` file, or by setting the
 `RBENV_VERSION` environment variable.
 
-    $ rbenv default 1.9.2-p290
+    $ rbenv set-default 1.9.2-p290
 
 The special version name `system` tells rbenv to use the system Ruby
 (detected by searching your `$PATH`).
 
-When run without a version number the currently configured default
-version is reported.
-
-### <a name="section_3.2"></a> 3.2 local
+### <a name="section_3.2"></a> 3.2 set-local
 
 Sets a local per-project Ruby version by writing the version name to
 an `.rbenv-version` file in the current directory. This version
 overrides the default, and can be overridden itself by setting the
 `RBENV_VERSION` environment variable.
 
-    $ rbenv local rbx-1.2.4
-
-When run without a version number the currently configured local
-version is reported.
+    $ rbenv set-local rbx-1.2.4
 
 ### <a name="section_3.3"></a> 3.3 versions
 
