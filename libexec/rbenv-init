@@ -55,9 +55,9 @@ if [ -z "$print" ]; then
   exit 1
 fi
 
-mkdir -p "${HOME}/.rbenv/"{shims,versions}
+mkdir -p "${RBENV_HOME}/"{shims,versions}
 
-echo 'export PATH="${HOME}/.rbenv/shims:${PATH}"'
+echo 'export PATH="'${RBENV_HOME}'/shims:${PATH}"'
 
 case "$shell" in
 bash | zsh )
@@ -66,18 +66,3 @@ bash | zsh )
 esac
 
 echo 'rbenv rehash 2>/dev/null'
-
-commands=(`rbenv commands --sh`)
-IFS="|"
-cat <<EOS
-function rbenv () {
-  command=\$1;
-  shift;
-  case \$command in
-  ${commands[*]})
-    eval \`rbenv sh-\$command \$@\`;;
-  *)
-    command rbenv \$command \$@;;
-  esac;
-};
-EOS
