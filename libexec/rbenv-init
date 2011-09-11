@@ -55,9 +55,9 @@ if [ -z "$print" ]; then
   exit 1
 fi
 
-mkdir -p "${HOME}/.rbenv/"{shims,versions}
+mkdir -p "${RBENV_ROOT}/"{shims,versions}
 
-echo 'export PATH="${HOME}/.rbenv/shims:${PATH}"'
+echo 'export PATH="'${RBENV_ROOT}'/shims:${PATH}"'
 
 case "$shell" in
 bash | zsh )
