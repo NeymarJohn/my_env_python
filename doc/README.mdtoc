@@ -81,13 +81,13 @@ easy to fork and contribute any changes back upstream.
 
         $ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile
 
-    **Zsh note**: Modifiy your `~/.zshenv` file instead of `~/.bash_profile`.
+    **Zsh note**: Modify your `~/.zshenv` file instead of `~/.bash_profile`.
 
 3. Add rbenv init to your shell to enable shims and autocompletion.
 
         $ echo 'eval "$(rbenv init -)"' >> ~/.bash_profile
 
-    **Zsh note**: Modifiy your `~/.zshenv` file instead of `~/.bash_profile`.
+    **Zsh note**: Modify your `~/.zshenv` file instead of `~/.bash_profile`.
 
 4. Restart your shell so the path changes take effect. You can now
    begin using rbenv.
@@ -182,15 +182,6 @@ opposed to this idea. Here's what `rbenv init` actually does:
 
 Run `rbenv init -` for yourself to see exactly what happens under the
 hood.
-
-### Uninstalling Ruby Versions ###
-
-As time goes on, ruby versions you install will accumulate in your
-`~/.rbenv/versions` directory.
-
-There is no uninstall or remove command in `rbenv`, so removing old
-versions is a simple matter of `rm -rf` the directory of the relevant
-ruby version you want removed under `~/.rbenv/versions`
 
 ## Usage ##
 
