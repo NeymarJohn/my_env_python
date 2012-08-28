@@ -30,8 +30,8 @@ tools that do one thing well.
     [rbenv-gemset](https://github.com/jamis/rbenv-gemset) plugin.
 * **Require changes to Ruby libraries for compatibility.** The
     simplicity of rbenv means as long as it's in your `$PATH`,
-    [nothing](https://rvm.io/integration/bundler/)
-    [else](https://rvm.io/integration/capistrano/)
+    [nothing](https://rvm.beginrescueend.com/integration/bundler/)
+    [else](https://rvm.beginrescueend.com/integration/capistrano/)
     needs to know about it.
 * **Prompt you with warnings when you switch to a project.** Instead
     of executing arbitrary code, rbenv reads just the version name
@@ -92,8 +92,7 @@ easy to fork and contribute any changes back upstream.
 
 1. Check out rbenv into `~/.rbenv`.
 
-        $ cd
-        $ git clone git://github.com/sstephenson/rbenv.git .rbenv
+        $ git clone git://github.com/sstephenson/rbenv.git ~/.rbenv
 
 2. Add `~/.rbenv/bin` to your `$PATH` for access to the `rbenv`
    command-line utility.
