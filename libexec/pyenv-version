@@ -2,8 +2,4 @@
 set -e
 [ -n "$PYENV_DEBUG" ] && set -x
 
-IFS=: PYENV_VERSION_NAMES=($(pyenv-version-name))
-
-for PYENV_VERSION_NAME in "${PYENV_VERSION_NAMES[@]}"; do
-  echo "$PYENV_VERSION_NAME (set by $(pyenv-version-origin))"
-done
+echo "$(pyenv-version-name) (set by $(pyenv-version-origin))"
