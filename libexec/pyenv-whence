@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -e
-[ -n "$RBENV_DEBUG" ] && set -x
+[ -n "$PYENV_DEBUG" ] && set -x
 
-# Provide rbenv completions
+# Provide pyenv completions
 if [ "$1" = "--complete" ]; then
   echo --path
-  exec rbenv shims --short
+  exec pyenv shims --short
 fi
 
 if [ "$1" = "--path" ]; then
@@ -17,19 +17,19 @@ fi
 
 whence() {
   local command="$1"
-  rbenv-versions --bare | while read version; do
-    path="$(rbenv-prefix "$version")/bin/${command}"
+  pyenv-versions --bare | while read version; do
+    path="$(pyenv-prefix "$version")/bin/${command}"
     if [ -x "$path" ]; then
       [ "$print_paths" ] && echo "$path" || echo "$version"
     fi
   done
 }
 
-RBENV_COMMAND="$1"
-if [ -z "$RBENV_COMMAND" ]; then
-  echo "usage: rbenv whence [--path] COMMAND" >&2
+PYENV_COMMAND="$1"
+if [ -z "$PYENV_COMMAND" ]; then
+  echo "usage: pyenv whence [--path] COMMAND" >&2
   exit 1
 fi
 
-result="$(whence "$RBENV_COMMAND")"
+result="$(whence "$PYENV_COMMAND")"
 [ -n "$result" ] && echo "$result"

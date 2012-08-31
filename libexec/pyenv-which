@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -e
-[ -n "$RBENV_DEBUG" ] && set -x
+[ -n "$PYENV_DEBUG" ] && set -x
 
-# Provide rbenv completions
+# Provide pyenv completions
 if [ "$1" = "--complete" ]; then
-  exec rbenv shims --short
+  exec pyenv shims --short
 fi
 
 expand_path() {
@@ -40,34 +40,34 @@ remove_from_path() {
   echo "${result%:}"
 }
 
-RBENV_VERSION="$(rbenv-version-name)"
-RBENV_COMMAND="$1"
+PYENV_VERSION="$(pyenv-version-name)"
+PYENV_COMMAND="$1"
 
-if [ -z "$RBENV_COMMAND" ]; then
-  echo "usage: rbenv which COMMAND" >&2
+if [ -z "$PYENV_COMMAND" ]; then
+  echo "usage: pyenv which COMMAND" >&2
   exit 1
 fi
 
-if [ "$RBENV_VERSION" = "system" ]; then
-  PATH="$(remove_from_path "${RBENV_ROOT}/shims")"
-  RBENV_COMMAND_PATH="$(command -v "$RBENV_COMMAND")"
+if [ "$PYENV_VERSION" = "system" ]; then
+  PATH="$(remove_from_path "${PYENV_ROOT}/shims")"
+  PYENV_COMMAND_PATH="$(command -v "$PYENV_COMMAND")"
 else
-  RBENV_COMMAND_PATH="${RBENV_ROOT}/versions/${RBENV_VERSION}/bin/${RBENV_COMMAND}"
+  PYENV_COMMAND_PATH="${PYENV_ROOT}/versions/${PYENV_VERSION}/bin/${PYENV_COMMAND}"
 fi
 
-for script in $(rbenv-hooks which); do
+for script in $(pyenv-hooks which); do
   source "$script"
 done
 
-if [ -x "$RBENV_COMMAND_PATH" ]; then
-  echo "$RBENV_COMMAND_PATH"
+if [ -x "$PYENV_COMMAND_PATH" ]; then
+  echo "$PYENV_COMMAND_PATH"
 else
-  echo "rbenv: $RBENV_COMMAND: command not found" >&2
+  echo "pyenv: $PYENV_COMMAND: command not found" >&2
 
-  versions="$(rbenv-whence "$RBENV_COMMAND" || true)"
+  versions="$(pyenv-whence "$PYENV_COMMAND" || true)"
   if [ -n "$versions" ]; then
     { echo
-      echo "The \`$1' command exists in these Ruby versions:"
+      echo "The \`$1' command exists in these Python versions:"
       echo "$versions" | sed 's/^/  /g'
       echo
     } >&2

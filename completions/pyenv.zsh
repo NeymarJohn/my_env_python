@@ -2,17 +2,17 @@ if [[ ! -o interactive ]]; then
     return
 fi
 
-compctl -K _rbenv rbenv
+compctl -K _pyenv pyenv
 
-_rbenv() {
+_pyenv() {
   local word words completions
   read -cA words
   word="${words[2]}"
 
   if [ "${#words}" -eq 2 ]; then
-    completions="$(rbenv commands)"
+    completions="$(pyenv commands)"
   else
-    completions="$(rbenv completions "${word}")"
+    completions="$(pyenv completions "${word}")"
   fi
 
   reply=("${(ps:\n:)completions}")
