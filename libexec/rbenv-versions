@@ -2,22 +2,24 @@
 set -e
 [ -n "$RBENV_DEBUG" ] && set -x
 
+RBENV_VERSION_NAME="$(rbenv-version-name)"
+
 if [ "$1" = "--bare" ]; then
   hit_prefix=""
   miss_prefix=""
-  current_version=""
+  print_version="$RBENV_VERSION_NAME"
 else
   hit_prefix="* "
   miss_prefix="  "
-  current_version="$(rbenv-version-name || true)"
+  print_version="$(rbenv-version)"
 fi
 
 for path in "${RBENV_ROOT}/versions/"*; do
   if [ -d "$path" ]; then
     version="${path##*/}"
 
-    if [ "$version" == "$current_version" ]; then
-      echo "${hit_prefix}$(rbenv-version)"
+    if [ "$version" == "$RBENV_VERSION_NAME" ]; then
+      echo "${hit_prefix}${print_version}"
     else
       echo "${miss_prefix}${version}"
     fi
