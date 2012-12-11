@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -e
+[ -n "$PYENV_DEBUG" ] && set -x
+
+# Provide pyenv completions
+if [ "$1" = "--complete" ]; then
+  echo system
+  exec pyenv-versions --bare
+fi
+
+if [ -n "$1" ]; then
+  versions=($@)
+  IFS=: PYENV_VERSION="${versions[*]}"
+  export PYENV_VERSION
+else
+  IFS=: versions=($(pyenv-version-name))
+fi
+
+if [ "$versions" = "system" ]; then
+  PYTHON_PATH="$(pyenv-which python)"
+  echo "${PYTHON_PATH%/*}"
+  exit
+fi
+
+PYENV_PREFIX_PATHS=()
+for version in "${versions[@]}"; do
+  PYENV_PREFIX_PATH="${PYENV_ROOT}/versions/${version}"
+  if [ -d "$PYENV_PREFIX_PATH" ]; then
+    PYENV_PREFIX_PATHS=("${PYENV_PREFIX_PATHS[@]}" "$PYENV_PREFIX_PATH")
+  else
+    echo "pyenv: version \`${version}' not installed" >&2
+    exit 1
+  fi
+done
+
+IFS=: echo "${PYENV_PREFIX_PATHS[*]}"
