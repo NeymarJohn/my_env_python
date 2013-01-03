@@ -37,9 +37,9 @@ bulletproof deployments.
   * [Homebrew on Mac OS X](#homebrew-on-mac-os-x)
   * [Neckbeard Configuration](#neckbeard-configuration)
   * [Uninstalling Ruby Versions](#uninstalling-ruby-versions)
-* [Usage](#usage)
-  * [rbenv global](#rbenv-global)
+* [Command Reference](#command-reference)
   * [rbenv local](#rbenv-local)
+  * [rbenv global](#rbenv-global)
   * [rbenv shell](#rbenv-shell)
   * [rbenv versions](#rbenv-versions)
   * [rbenv version](#rbenv-version)
@@ -225,35 +225,20 @@ The [ruby-build](https://github.com/sstephenson/ruby-build) plugin
 provides an `rbenv uninstall` command to automate the removal
 process.
 
-## Usage ##
+## Command Reference ##
 
 Like `git`, the `rbenv` command delegates to subcommands based on its
 first argument. The most common subcommands are:
-
-### rbenv global ###
-
-Sets the global version of Ruby to be used in all shells by writing
-the version name to the `~/.rbenv/version` file. This version can be
-overridden by an application-specific `.ruby-version` file, or by
-setting the `RBENV_VERSION` environment variable.
-
-    $ rbenv global 1.9.3-p327
-
-The special version name `system` tells rbenv to use the system Ruby
-(detected by searching your `$PATH`).
-
-When run without a version number, `rbenv global` reports the
-currently configured global version.
 
 ### rbenv local ###
 
 Sets a local application-specific Ruby version by writing the version
 name to a `.ruby-version` file in the current directory. This version
-overrides the global, and can be overridden itself by setting the
-`RBENV_VERSION` environment variable or with the `rbenv shell`
+overrides the global version, and can be overridden itself by setting
+the `RBENV_VERSION` environment variable or with the `rbenv shell`
 command.
 
-    $ rbenv local rbx-1.2.4
+    $ rbenv local 1.9.3-p327
 
 When run without a version number, `rbenv local` reports the currently
 configured local version. You can also unset the local version:
@@ -264,6 +249,21 @@ Previous versions of rbenv stored local version specifications in a
 file named `.rbenv-version`. For backwards compatibility, rbenv will
 read a local version specified in an `.rbenv-version` file, but a
 `.ruby-version` file in the same directory will take precedence.
+
+### rbenv global ###
+
+Sets the global version of Ruby to be used in all shells by writing
+the version name to the `~/.rbenv/version` file. This version can be
+overridden by an application-specific `.ruby-version` file, or by
+setting the `RBENV_VERSION` environment variable.
+
+    $ rbenv global 1.8.7-p352
+
+The special version name `system` tells rbenv to use the system Ruby
+(detected by searching your `$PATH`).
+
+When run without a version number, `rbenv global` reports the
+currently configured global version.
 
 ### rbenv shell ###
 
