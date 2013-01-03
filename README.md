@@ -230,8 +230,8 @@ first argument. The most common subcommands are:
 
 Sets the global version of Ruby to be used in all shells by writing
 the version name to the `~/.rbenv/version` file. This version can be
-overridden by a per-project `.rbenv-version` file, or by setting the
-`RBENV_VERSION` environment variable.
+overridden by an application-specific `.ruby-version` file, or by
+setting the `RBENV_VERSION` environment variable.
 
     $ rbenv global 1.9.3-p327
 
@@ -243,8 +243,8 @@ currently configured global version.
 
 ### rbenv local ###
 
-Sets a local per-project Ruby version by writing the version name to
-an `.rbenv-version` file in the current directory. This version
+Sets a local application-specific Ruby version by writing the version
+name to a `.ruby-version` file in the current directory. This version
 overrides the global, and can be overridden itself by setting the
 `RBENV_VERSION` environment variable or with the `rbenv shell`
 command.
@@ -256,11 +256,16 @@ configured local version. You can also unset the local version:
 
     $ rbenv local --unset
 
+Previous versions of rbenv stored local version specifications in a
+file named `.rbenv-version`. For backwards compatibility, rbenv will
+read a local version specified in an `.rbenv-version` file, but a
+`.ruby-version` file in the same directory will take precedence.
+
 ### rbenv shell ###
 
 Sets a shell-specific Ruby version by setting the `RBENV_VERSION`
-environment variable in your shell. This version overrides both
-project-specific versions and the global version.
+environment variable in your shell. This version overrides
+application-specific versions and the global version.
 
     $ rbenv shell jruby-1.7.1
 
@@ -284,7 +289,7 @@ the currently active version.
     $ rbenv versions
       1.8.7-p352
       1.9.2-p290
-    * 1.9.3-p327 (set by /Users/sam/.rbenv/global)
+    * 1.9.3-p327 (set by /Users/sam/.rbenv/version)
       jruby-1.7.1
       rbx-1.2.4
       ree-1.8.7-2011.03
@@ -295,7 +300,7 @@ Displays the currently active Ruby version, along with information on
 how it was set.
 
     $ rbenv version
-    1.8.7-p352 (set by /Volumes/37signals/basecamp/.rbenv-version)
+    1.8.7-p352 (set by /Volumes/37signals/basecamp/.ruby-version)
 
 ### rbenv rehash ###
 
