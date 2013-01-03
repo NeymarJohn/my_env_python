@@ -1,40 +1,34 @@
 # Simple Ruby Version Management: rbenv
 
-rbenv lets you easily switch between multiple versions of Ruby. It's
-simple, unobtrusive, and follows the UNIX tradition of single-purpose
-tools that do one thing well.
+rbenv lets you lock your application to a specific version of Ruby,
+ensuring a consistent runtime environment during development and in
+production. Use it in conjunction with
+[Bundler](http://gembundler.com/) to facilitate painless Ruby upgrades
+and bulletproof deployments.
 
-<img src="http://i.sstephenson.us/rbenv2.png" width="894" height="464">
+**Powerful in development.** Easily specify the Ruby version
+  dependency for your application with a single file and keep all your
+  teammates on the same page. Transparently run multiple applications
+  on different versions of Ruby from the command line or with app
+  servers like [Pow](http://pow.cx). Override the specified Ruby
+  version at any time just by setting an environment variable.
 
-### rbenv _does…_
+**Rock-solid in production.** Your application's executables are its
+  interface with ops. With rbenv and [Bundler
+  binstubs](http://yehudakatz.com/2011/05/30/gem-versioning-and-bundler-doing-it-right/)
+  you'll never again need to `cd` in a cron job or Chef recipe to
+  ensure you've selected the right runtime. The Ruby version
+  dependency information lives in one place—your app's directory—so
+  upgrades and rollbacks can be atomic.
 
-* Let you **change the global Ruby version** on a per-user basis.
-* Provide support for **per-project Ruby versions**.
-* Allow you to **override the Ruby version** with an environment
-  variable.
-
-### In contrast with rvm, rbenv _does not…_
-
-* **Need to be loaded into your shell.** Instead, rbenv's shim
-    approach works by adding a directory to your `$PATH`.
-* **Override shell commands like `cd`.** That's dangerous and
-    error-prone.
-* **Have a configuration file.** There's nothing to configure except
-    which version of Ruby you want to use.
-* **Install Ruby.** You can build and install Ruby yourself, or use
-    [ruby-build][] to automate the process.
-* **Manage gemsets.** [Bundler](http://gembundler.com/) is a better
-    way to manage application dependencies. If you have projects that
-    are not yet using Bundler you can install the
-    [rbenv-gemset](https://github.com/jamis/rbenv-gemset) plugin.
-* **Require changes to Ruby libraries for compatibility.** The
-    simplicity of rbenv means as long as it's in your `$PATH`,
-    [nothing](https://rvm.io/integration/bundler/)
-    [else](https://rvm.io/integration/capistrano/)
-    needs to know about it.
-* **Prompt you with warnings when you switch to a project.** Instead
-    of executing arbitrary code, rbenv reads just the version name
-    from each project. There's nothing to "trust."
+**One thing well.** rbenv is concerned solely with switching Ruby
+  versions, but a rich plugin ecosystem lets you tailor it to suit
+  your needs. Compile your own Ruby versions, or use the
+  [ruby-build](https://github.com/sstephenson/ruby-build) plugin to
+  automate the process. Specify per-application environment variables
+  with [rbenv-vars](https://github.com/sstephenson/rbenv-vars). See
+  more [plugins on the
+  wiki](https://github.com/sstephenson/rbenv/wiki/Plugins).
 
 ## Table of Contents
 
@@ -128,8 +122,9 @@ easy to fork and contribute any changes back upstream.
     $ exec $SHELL -l
     ~~~
 
-5. Install [ruby-build][], which provides an `rbenv install`
-   command that simplifies the process of installing new Ruby versions.
+5. Install [ruby-build](https://github.com/sstephenson/ruby-build),
+   which provides an `rbenv install` command that simplifies the
+   process of installing new Ruby versions.
 
     ~~~
     $ rbenv install 1.9.3-p327
@@ -171,7 +166,9 @@ $ git checkout v0.2.0
 
 ### Homebrew on Mac OS X ###
 
-You can also install rbenv using the [Homebrew][] on Mac OS X.
+You can also install rbenv using the
+[Homebrew](http://mxcl.github.com/homebrew/) package manager on Mac OS
+X.
 
 ~~~
 $ brew update
@@ -235,7 +232,7 @@ first argument. The most common subcommands are:
 
 Sets the global version of Ruby to be used in all shells by writing
 the version name to the `~/.rbenv/version` file. This version can be
-overridden by a per-project `.ruby-version` file, or by setting the
+overridden by a per-project `.rbenv-version` file, or by setting the
 `RBENV_VERSION` environment variable.
 
     $ rbenv global 1.9.3-p327
@@ -249,7 +246,7 @@ currently configured global version.
 ### rbenv local ###
 
 Sets a local per-project Ruby version by writing the version name to
-a `.ruby-version` file in the current directory. This version
+an `.rbenv-version` file in the current directory. This version
 overrides the global, and can be overridden itself by setting the
 `RBENV_VERSION` environment variable or with the `rbenv shell`
 command.
@@ -260,11 +257,6 @@ When run without a version number, `rbenv local` reports the currently
 configured local version. You can also unset the local version:
 
     $ rbenv local --unset
-
-Previous versions of rbenv stored local version specifications in a
-file named `.rbenv-version`. For backwards compatibility, rbenv will
-read a local version specified in an `.rbenv-version` file, but a
-`.ruby-version` file in the same directory will take precedence.
 
 ### rbenv shell ###
 
@@ -294,7 +286,7 @@ the currently active version.
     $ rbenv versions
       1.8.7-p352
       1.9.2-p290
-    * 1.9.3-p327 (set by /Users/sam/.rbenv/version)
+    * 1.9.3-p327 (set by /Users/sam/.rbenv/global)
       jruby-1.7.1
       rbx-1.2.4
       ree-1.8.7-2011.03
@@ -305,7 +297,7 @@ Displays the currently active Ruby version, along with information on
 how it was set.
 
     $ rbenv version
-    1.8.7-p352 (set by /Volumes/37signals/basecamp/.ruby-version)
+    1.8.7-p352 (set by /Volumes/37signals/basecamp/.rbenv-version)
 
 ### rbenv rehash ###
 
@@ -421,7 +413,7 @@ tracker](https://github.com/sstephenson/rbenv/issues).
 
 (The MIT license)
 
-Copyright (c) 2011 Sam Stephenson
+Copyright (c) 2013 Sam Stephenson
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -441,7 +433,3 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
-  [ruby-build]: https://github.com/sstephenson/ruby-build
-  [homebrew]: http://mxcl.github.com/homebrew/
