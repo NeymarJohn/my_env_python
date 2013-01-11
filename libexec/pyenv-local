@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -e
+[ -n "$PYENV_DEBUG" ] && set -x
+
+# Provide pyenv completions
+if [ "$1" = "--complete" ]; then
+  echo --unset
+  echo system
+  exec pyenv-versions --bare
+fi
+
+versions=($@)
+PYENV_VERSION_FILE=".pyenv-version"
+
+if [ "$versions" = "--unset" ]; then
+  rm -f "$PYENV_VERSION_FILE"
+elif [ -n "$versions" ]; then
+  pyenv-version-file-write "$PYENV_VERSION_FILE" "${versions[@]}"
+else
+  IFS=: versions=($(
+    pyenv-version-file-read "$PYENV_VERSION_FILE" ||
+    { echo "pyenv: no local version configured for this directory"
+      exit 1
+    } >&2
+  ))
+  for version in "${versions[@]}"; do
+    echo "$version"
+  done
+fi
