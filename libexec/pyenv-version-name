@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Summary: Show the current Python version
+set -e
+[ -n "$PYENV_DEBUG" ] && set -x
+
+if [ -n "$PYENV_VERSION" ]; then
+  IFS=: versions=($(echo "${PYENV_VERSION}"))
+else
+  PYENV_VERSION_FILE="$(pyenv-version-file)"
+  IFS=: versions=($(pyenv-version-file-read "$PYENV_VERSION_FILE" || true))
+  IFS=: PYENV_VERSION="${versions[*]}"
+  export PYENV_VERSION
+fi
+
+if [ -z "$versions" ]; then
+  echo "system"
+  exit
+fi
+
+version_exists() {
+  local version="$1"
+  [ -d "${RBENV_ROOT}/versions/${version}" ]
+}
+
+for version in "${versions[@]}"; do
+  PYENV_VERSION_PATH="${PYENV_ROOT}/versions/${version}"
+
+  if [ "$version" != "system" ] && version_exists "$version"; then
+    echo "pyenv: version \`$version' is not installed" >&2
+    exit 1
+  fi
+done
+
+echo "${PYENV_VERSION}"
