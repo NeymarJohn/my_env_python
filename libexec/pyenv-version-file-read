@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Usage: pyenv version-file-read <file>
+set -e
+[ -n "$PYENV_DEBUG" ] && set -x
+
+VERSION_FILE="$1"
+
+if [ -e "$VERSION_FILE" ]; then
+  # Read the first non-whitespace word from the specified version file.
+  # Be careful not to load it whole in case there's something crazy in it.
+  versions=()
+  while read -a words; do
+    word="${words[0]}"
+    if [ -n "$word" ]; then
+      length="${#versions[@]}"
+      versions=("${versions[@]}" "$word")
+    fi
+  done < <( cat "$VERSION_FILE" && echo )
+
+  if [ -n "$versions" ]; then
+    {
+      IFS=:
+      echo "${versions[*]}"
+    }
+    exit
+  fi
+fi
+
+exit 1
