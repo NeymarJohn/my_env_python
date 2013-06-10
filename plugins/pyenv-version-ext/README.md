@@ -1,5 +1,40 @@
-Copyright (c) 2013 Yamashita, Yuu
-Copyright (c) 2013 Sam Stephenson
+# pyenv-version-ext
+
+pyenv-version-ext is a [pyenv](https://github.com/yyuu/pyenv) plugin
+that provides a `pyenv push` and `pyenv pop` commands to manage Python
+versions.
+
+## Installation
+
+### Installing as an pyenv plugin (recommended)
+
+You need nothing to do since python-build is bundled with pyenv by
+default.
+
+
+## Usage
+
+You can manage your version stack by `pyenv push` and `pyenv pop`.
+
+    $ pyenv global
+    2.7.5
+    3.2.5
+    $ pyenv push 3.3.2
+    $ pyenv global
+    2.7.5
+    3.2.5
+    3.3.2
+    $ pyenv pop
+    2.7.5
+    3.2.5
+
+The push/pop operation is also efective for local and shell versions.
+
+### License
+
+(The MIT License)
+
+* Copyright (c) 2013 Yamashita, Yuu
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
