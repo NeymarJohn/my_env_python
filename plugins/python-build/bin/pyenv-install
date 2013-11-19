@@ -1,21 +1,17 @@
 #!/usr/bin/env bash
 #
-# Summary: Install a Python version using python-build
+# Summary: Install a Python version using the python-build plugin
 #
-# Usage: pyenv install [-f] [-kvp] <version>
-#        pyenv install [-f] [-kvp] <definition-file>
+# Usage: pyenv install [-f|--force] [-g|--debug] [-k|--keep] [-v|--verbose] <version>
+#        pyenv install [-f|--force] [-g|--debug] [-k|--keep] [-v|--verbose] <definition-file>
 #        pyenv install -l|--list
 #
 #   -l/--list        List all available versions
 #   -f/--force       Install even if the version appears to be installed already
-#
-#   python-build options:
-#
 #   -k/--keep        Keep source tree in $PYENV_BUILD_ROOT after installation
 #                    (defaults to $PYENV_ROOT/sources)
-#   -v/--verbose     Verbose mode: print compilation status to stdout
-#   -p/--patch       Apply a patch from stdin before building
 #   -g/--debug       Build a debug version
+#   -v/--verbose     Verbose mode: print compilation status to stdout
 #
 # For detailed information on installing Python versions with
 # python-build, including a list of environment variables for adjusting
@@ -54,7 +50,6 @@ indent() {
 unset FORCE
 unset KEEP
 unset VERBOSE
-unset HAS_PATCH
 unset DEBUG
 
 parse_options "$@"
@@ -76,9 +71,6 @@ for option in "${OPTIONS[@]}"; do
     ;;
   "v" | "verbose" )
     VERBOSE="-v"
-    ;;
-  "p" | "patch" )
-    HAS_PATCH="-p"
     ;;
   "g" | "debug" )
     DEBUG="-g"
@@ -175,7 +167,7 @@ trap cleanup SIGINT
 
 # Invoke `python-build` and record the exit status in $STATUS.
 STATUS=0
-python-build $KEEP $VERBOSE $HAS_PATCH $DEBUG "$DEFINITION" "$PREFIX" || STATUS="$?"
+python-build $KEEP $VERBOSE $DEBUG "$DEFINITION" "$PREFIX" || STATUS="$?"
 
 # Display a more helpful message if the definition wasn't found.
 if [ "$STATUS" == "2" ]; then
