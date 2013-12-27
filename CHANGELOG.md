@@ -1,5 +1,19 @@
 ## Version History
 
+#### 0.4.0-20131217
+
+* python-build: Fix broken build of CPython 3.3+ on Darwin
+* python-build: Not build GNU Readline uselessly on Darwin
+
+#### 0.4.0-20131216
+
+* python-build: Add new CPython releases; 3.3.3 (#80)
+* python-build: Add new CPython releases candidates; 3.4.0b1
+* python-build: Add new PyPy releases; pypy-2.2.1, pypy-2.2.1-src
+* python-build: Update default setuptools version (1.3.2 -> 2.0)
+* python-build: Imported recent changes from ruby-build v20131211
+* pyenv: Fix pyenv-prefix to trim "/bin" in `pyenv prefix system` (#88)
+
 #### 0.4.0-20131116
 
 * python-build: Add new CPython releases; 2.6.9, 2.7.6 (#76)
