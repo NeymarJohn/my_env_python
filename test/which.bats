@@ -5,7 +5,7 @@ load test_helper
 create_executable() {
   local bin
   if [[ $1 == */* ]]; then bin="$1"
-  else bin="${RBENV_ROOT}/versions/${1}/bin"
+  else bin="${PYENV_ROOT}/versions/${1}/bin"
   fi
   mkdir -p "$bin"
   touch "${bin}/$2"
@@ -13,54 +13,54 @@ create_executable() {
 }
 
 @test "outputs path to executable" {
-  create_executable "1.8" "ruby"
-  create_executable "2.0" "rspec"
+  create_executable "2.7" "python"
+  create_executable "3.4" "py.test"
 
-  RBENV_VERSION=1.8 run rbenv-which ruby
-  assert_success "${RBENV_ROOT}/versions/1.8/bin/ruby"
+  PYENV_VERSION=2.7 run pyenv-which python
+  assert_success "${PYENV_ROOT}/versions/2.7/bin/python"
 
-  RBENV_VERSION=2.0 run rbenv-which rspec
-  assert_success "${RBENV_ROOT}/versions/2.0/bin/rspec"
+  PYENV_VERSION=3.4 run pyenv-which py.test
+  assert_success "${PYENV_ROOT}/versions/3.4/bin/py.test"
 }
 
 @test "searches PATH for system version" {
-  create_executable "${RBENV_TEST_DIR}/bin" "kill-all-humans"
-  create_executable "${RBENV_ROOT}/shims" "kill-all-humans"
+  create_executable "${PYENV_TEST_DIR}/bin" "kill-all-humans"
+  create_executable "${PYENV_ROOT}/shims" "kill-all-humans"
 
-  RBENV_VERSION=system run rbenv-which kill-all-humans
-  assert_success "${RBENV_TEST_DIR}/bin/kill-all-humans"
+  PYENV_VERSION=system run pyenv-which kill-all-humans
+  assert_success "${PYENV_TEST_DIR}/bin/kill-all-humans"
 }
 
 @test "version not installed" {
-  create_executable "2.0" "rspec"
-  RBENV_VERSION=1.9 run rbenv-which rspec
-  assert_failure "rbenv: version \`1.9' is not installed"
+  create_executable "3.4" "py.test"
+  PYENV_VERSION=3.3 run pyenv-which py.test
+  assert_failure "pyenv: version \`3.3' is not installed"
 }
 
 @test "no executable found" {
-  create_executable "1.8" "rspec"
-  RBENV_VERSION=1.8 run rbenv-which rake
-  assert_failure "rbenv: rake: command not found"
+  create_executable "2.7" "py.test"
+  PYENV_VERSION=2.7 run pyenv-which fab
+  assert_failure "pyenv: fab: command not found"
 }
 
 @test "executable found in other versions" {
-  create_executable "1.8" "ruby"
-  create_executable "1.9" "rspec"
-  create_executable "2.0" "rspec"
+  create_executable "2.7" "python"
+  create_executable "3.3" "py.test"
+  create_executable "3.4" "py.test"
 
-  RBENV_VERSION=1.8 run rbenv-which rspec
+  PYENV_VERSION=2.7 run pyenv-which py.test
   assert_failure
   assert_output <<OUT
-rbenv: rspec: command not found
+pyenv: py.test: command not found
 
-The \`rspec' command exists in these Ruby versions:
-  1.9
-  2.0
+The \`py.test' command exists in these Python versions:
+  3.3
+  3.4
 OUT
 }
 
 @test "carries original IFS within hooks" {
-  hook_path="${RBENV_TEST_DIR}/rbenv.d"
+  hook_path="${PYENV_TEST_DIR}/pyenv.d"
   mkdir -p "${hook_path}/which"
   cat > "${hook_path}/which/hello.bash" <<SH
 hellos=(\$(printf "hello\\tugly world\\nagain"))
@@ -68,7 +68,7 @@ echo HELLO="\$(printf ":%s" "\${hellos[@]}")"
 exit
 SH
 
-  RBENV_HOOK_PATH="$hook_path" IFS=$' \t\n' run rbenv-which anything
+  PYENV_HOOK_PATH="$hook_path" IFS=$' \t\n' run pyenv-which anything
   assert_success
   assert_output "HELLO=:hello:ugly:world:again"
 }

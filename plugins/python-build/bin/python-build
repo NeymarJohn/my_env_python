@@ -1,0 +1,1376 @@
+#!/usr/bin/env bash
+
+PYTHON_BUILD_VERSION="20131225.1"
+
+set -E
+exec 3<&2 # preserve original stderr at fd 3
+
+
+lib() {
+  parse_options() {
+    OPTIONS=()
+    ARGUMENTS=()
+    local arg option index
+
+    for arg in "$@"; do
+      if [ "${arg:0:1}" = "-" ]; then
+        if [ "${arg:1:1}" = "-" ]; then
+          OPTIONS[${#OPTIONS[*]}]="${arg:2}"
+        else
+          index=1
+          while option="${arg:$index:1}"; do
+            [ -n "$option" ] || break
+            OPTIONS[${#OPTIONS[*]}]="$option"
+            index=$(($index+1))
+          done
+        fi
+      else
+        ARGUMENTS[${#ARGUMENTS[*]}]="$arg"
+      fi
+    done
+  }
+
+  if [ "$1" == "--$FUNCNAME" ]; then
+    declare -f "$FUNCNAME"
+    echo "$FUNCNAME \"\$1\";"
+    exit
+  fi
+}
+lib "$1"
+
+
+resolve_link() {
+  $(type -p greadlink readlink | head -1) "$1"
+}
+
+abs_dirname() {
+  local cwd="$(pwd)"
+  local path="$1"
+
+  while [ -n "$path" ]; do
+    cd "${path%/*}"
+    local name="${path##*/}"
+    path="$(resolve_link "$name" || true)"
+  done
+
+  pwd
+  cd "$cwd"
+}
+
+capitalize() {
+  printf "%s" "$1" | tr a-z A-Z
+}
+
+sanitize() {
+  printf "%s" "$1" | sed "s/[^A-Za-z0-9.-]/_/g; s/__*/_/g"
+}
+
+build_failed() {
+  { echo
+    echo "BUILD FAILED"
+    echo
+
+    if ! rmdir "${BUILD_PATH}" 2>/dev/null; then
+      echo "Inspect or clean up the working tree at ${BUILD_PATH}"
+
+      if file_is_not_empty "$LOG_PATH"; then
+        echo "Results logged to ${LOG_PATH}"
+        echo
+        echo "Last 10 log lines:"
+        tail -n 10 "$LOG_PATH"
+      fi
+    fi
+  } >&3
+  exit 1
+}
+
+file_is_not_empty() {
+  local filename="$1"
+  local line_count="$(wc -l "$filename" 2>/dev/null || true)"
+
+  if [ -n "$line_count" ]; then
+    words=( $line_count )
+    [ "${words[0]}" -gt 0 ]
+  else
+    return 1
+  fi
+}
+
+num_cpu_cores() {
+  local num=""
+  if [ "Darwin" = "$(uname -s)" ]; then
+    num="$(sysctl -n hw.ncpu 2>/dev/null || true)"
+  elif [ -r /proc/cpuinfo ]; then
+    num="$(grep ^processor /proc/cpuinfo | wc -l)"
+    [ "$num" -gt 0 ] || num=""
+  fi
+  echo "${num:-2}"
+}
+
+install_package() {
+  install_package_using "tarball" 1 "$@"
+}
+
+install_git() {
+  install_package_using "git" 2 "$@"
+}
+
+install_hg() {
+  install_package_using "hg" 2 "$@"
+}
+
+install_svn() {
+  install_package_using "svn" 2 "$@"
+}
+
+install_jar() {
+  install_package_using "jar" 1 "$@"
+}
+
+install_zip() {
+  install_package_using "zip" 1 "$@"
+}
+
+install_package_using() {
+  local package_type="$1"
+  local package_type_nargs="$2"
+  local package_name="$3"
+  shift 3
+
+  local fetch_args=( "$package_name" "${@:1:$package_type_nargs}" )
+  local make_args=( "$package_name" )
+  local arg last_arg
+
+  for arg in "${@:$(( $package_type_nargs + 1 ))}"; do
+    if [ "$last_arg" = "--if" ]; then
+      "$arg" || return 0
+    elif [ "$arg" != "--if" ]; then
+      make_args["${#make_args[@]}"]="$arg"
+    fi
+    last_arg="$arg"
+  done
+
+  pushd "$BUILD_PATH" >&4
+  "fetch_${package_type}" "${fetch_args[@]}"
+  make_package "${make_args[@]}"
+  popd >&4
+
+  { echo "Installed ${package_name} to ${PREFIX_PATH}"
+    echo
+  } >&2
+}
+
+make_package() {
+  local package_name="$1"
+  shift
+
+  pushd "$package_name" >&4
+  before_install_package "$package_name"
+  build_package "$package_name" $*
+  after_install_package "$package_name"
+  fix_directory_permissions
+  popd >&4
+}
+
+compute_md5() {
+  if type md5 &>/dev/null; then
+    md5 -q
+  elif type openssl &>/dev/null; then
+    local output="$(openssl md5)"
+    echo "${output##* }"
+  elif type md5sum &>/dev/null; then
+    local output="$(md5sum -b)"
+    echo "${output% *}"
+  else
+    return 1
+  fi
+}
+
+verify_checksum() {
+  # If there's no MD5 support, return success
+  [ -n "$HAS_MD5_SUPPORT" ] || return 0
+
+  # If the specified filename doesn't exist, return success
+  local filename="$1"
+  [ -e "$filename" ] || return 0
+
+  # If there's no expected checksum, return success
+  local expected_checksum=`echo "$2" | tr [A-Z] [a-z]`
+  [ -n "$expected_checksum" ] || return 0
+
+  # If the computed checksum is empty, return failure
+  local computed_checksum=`echo "$(compute_md5 < "$filename")" | tr [A-Z] [a-z]`
+  [ -n "$computed_checksum" ] || return 1
+
+  if [ "$expected_checksum" != "$computed_checksum" ]; then
+    { echo
+      echo "checksum mismatch: ${filename} (file is corrupt)"
+      echo "expected $expected_checksum, got $computed_checksum"
+      echo
+    } >&4
+    return 1
+  fi
+}
+
+http() {
+  local method="$1"
+  local url="$2"
+  local file="$3"
+  [ -n "$url" ] || return 1
+
+  if type curl &>/dev/null; then
+    "http_${method}_curl" "$url" "$file"
+  elif type wget &>/dev/null; then
+    "http_${method}_wget" "$url" "$file"
+  else
+    echo "error: please install \`curl\` or \`wget\` and try again" >&2
+    exit 1
+  fi
+}
+
+http_head_curl() {
+  curl -qsILf "$1" >&4 2>&1
+}
+
+http_get_curl() {
+  curl -C - -o "${2:--}" -qsSLf "$1"
+}
+
+http_head_wget() {
+  wget -q --spider "$1" >&4 2>&1
+}
+
+http_get_wget() {
+  wget -nv -c -O "${2:--}" "$1"
+}
+
+fetch_tarball() {
+  local package_name="$1"
+  local package_url="$2"
+  local mirror_url
+  local checksum
+
+  if [ "$package_url" != "${package_url/\#}" ]; then
+    checksum="${package_url#*#}"
+    package_url="${package_url%%#*}"
+
+    if [ -n "$PYTHON_BUILD_MIRROR_URL" ]; then
+      mirror_url="${PYTHON_BUILD_MIRROR_URL}/$checksum"
+    fi
+  fi
+
+  local tar_args="xzvf"
+  local package_filename="${package_name}.tar.gz"
+
+  if [ "$package_url" != "${package_url%tgz}" ]; then
+    package_filename="${package_filename%tar.gz}tgz"
+  fi
+
+  if [ "$package_url" != "${package_url%bz2}" ]; then
+    package_filename="${package_filename%.gz}.bz2"
+    tar_args="${tar_args/z/j}"
+  fi
+
+  if ! symlink_tarball_from_cache "$package_filename" "$checksum"; then
+    echo "Downloading ${package_filename}..." >&2
+    http head "$mirror_url" &&
+    download_tarball "$mirror_url" "$package_filename" "$checksum" ||
+    download_tarball "$package_url" "$package_filename" "$checksum"
+  fi
+
+  { if tar $tar_args "$package_filename"; then
+      if [ -z "$KEEP_BUILD_PATH" ]; then
+        rm -f "$package_filename"
+      else
+        true
+      fi
+    fi
+  } >&4 2>&1
+}
+
+symlink_tarball_from_cache() {
+  [ -n "$PYTHON_BUILD_CACHE_PATH" ] || return 1
+
+  local package_filename="$1"
+  local cached_package_filename="${PYTHON_BUILD_CACHE_PATH}/$package_filename"
+  local checksum="$2"
+
+  [ -e "$cached_package_filename" ] || return 1
+  verify_checksum "$cached_package_filename" "$checksum" >&4 2>&1 || return 1
+  ln -s "$cached_package_filename" "$package_filename" >&4 2>&1 || return 1
+}
+
+download_tarball() {
+  local package_url="$1"
+  [ -n "$package_url" ] || return 1
+
+  local package_filename="$2"
+  local checksum="$3"
+
+  echo "-> $package_url" >&2
+
+  if http get "$package_url" "$package_filename" >&4 2>&1; then
+    verify_checksum "$package_filename" "$checksum" >&4 2>&1 || return 1
+  else
+    echo "error: failed to download $package_filename" >&2
+    return 1
+  fi
+
+  if [ -n "$PYTHON_BUILD_CACHE_PATH" ]; then
+    local cached_package_filename="${PYTHON_BUILD_CACHE_PATH}/$package_filename"
+    { mv "$package_filename" "$cached_package_filename"
+      ln -s "$cached_package_filename" "$package_filename"
+    } >&4 2>&1 || return 1
+  fi
+}
+
+fetch_git() {
+  local package_name="$1"
+  local git_url="$2"
+  local git_ref="$3"
+
+  echo "Cloning ${git_url}..." >&2
+
+  if type git &>/dev/null; then
+    if [ -n "$PYTHON_BUILD_CACHE_PATH" ]; then
+      pushd "$PYTHON_BUILD_CACHE_PATH" >&4
+      local clone_name="$(sanitize "$git_url")"
+      if [ -e "${clone_name}" ]; then
+        { cd "${clone_name}"
+          git fetch --force "$git_url" "+${git_ref}:${git_ref}"
+        } >&4 2>&1
+      else
+        git clone --bare --branch "$git_ref" "$git_url" "${clone_name}" >&4 2>&1
+      fi
+      git_url="$PYTHON_BUILD_CACHE_PATH/${clone_name}"
+      popd >&4
+    fi
+
+    git clone --depth 1 --branch "$git_ref" "$git_url" "${package_name}" >&4 2>&1
+  else
+    echo "error: please install \`git\` and try again" >&2
+    exit 1
+  fi
+}
+
+fetch_hg() {
+  local package_name="$1"
+  local hg_url="$2"
+  local hg_ref="$3"
+
+  echo "Cloning ${hg_url}..." >&2
+
+  if type hg &>/dev/null; then
+    if [ -n "$PYTHON_BUILD_CACHE_PATH" ]; then
+      pushd "$PYTHON_BUILD_CACHE_PATH" >&4
+      local clone_name="$(sanitize "$hg_url")"
+      if [ -e "${clone_name}" ]; then
+        { cd "${clone_name}"
+          hg pull --force "$hg_url"
+        } >&4 2>&1
+      else
+        { hg clone --branch "$hg_ref" "$hg_url" "${clone_name}"
+          cd "${clone_name}"
+          hg update null
+        } >&4 2>&1
+      fi
+      hg_url="$PYTHON_BUILD_CACHE_PATH/${clone_name}"
+      popd >&4
+    fi
+
+    hg clone --branch "$hg_ref" "$hg_url" "${package_name}" >&4 2>&1
+  else
+    echo "error: please install \`hg\` and try again" >&2
+    exit 1
+  fi
+}
+
+fetch_svn() {
+  local package_name="$1"
+  local svn_url="$2"
+  local svn_rev="$3"
+
+  echo "Checking out ${svn_url}..." >&2
+
+  if type svn &>/dev/null; then
+    svn co -r "$svn_rev" "$svn_url" "${package_name}" >&4 2>&1
+  else
+    echo "error: please install \`svn\` and try again" >&2
+    exit 1
+  fi
+}
+
+fetch_jar() {
+  local package_name="$1"
+  local package_url="$2"
+  local mirror_url
+  local checksum
+
+  if [ "$package_url" != "${package_url/\#}" ]; then
+    checksum="${package_url#*#}"
+    package_url="${package_url%%#*}"
+
+    if [ -n "$PYTHON_BUILD_MIRROR_URL" ]; then
+      mirror_url="${PYTHON_BUILD_MIRROR_URL}/$checksum"
+    fi
+  fi
+
+  local package_filename="${package_name}.jar"
+
+  if ! symlink_tarball_from_cache "$package_filename" "$checksum"; then
+    echo "Downloading ${package_filename}..." >&2
+    http head "$mirror_url" &&
+    download_tarball "$mirror_url" "$package_filename" "$checksum" ||
+    download_tarball "$package_url" "$package_filename" "$checksum"
+  fi
+
+  { if $JAVA -jar ${package_name}.jar -s -d ${package_name}; then
+      if [ -z "$KEEP_BUILD_PATH" ]; then
+        rm -f "$package_filename"
+      else
+        true
+      fi
+    fi
+  } >&4 2>&1
+}
+
+fetch_zip() {
+  local package_name="$1"
+  local package_url="$2"
+  local mirror_url
+  local checksum
+
+  if [ "$package_url" != "${package_url/\#}" ]; then
+    checksum="${package_url#*#}"
+    package_url="${package_url%%#*}"
+
+    if [ -n "$PYTHON_BUILD_MIRROR_URL" ]; then
+      mirror_url="${PYTHON_BUILD_MIRROR_URL}/$checksum"
+    fi
+  fi
+
+  local package_filename="${package_name}.zip"
+
+  if ! symlink_tarball_from_cache "$package_filename" "$checksum"; then
+    echo "Downloading ${package_filename}..." >&2
+    http head "$mirror_url" &&
+    download_tarball "$mirror_url" "$package_filename" "$checksum" ||
+    download_tarball "$package_url" "$package_filename" "$checksum"
+  fi
+
+  { if unzip "$package_filename"; then
+      if [ -z "$KEEP_BUILD_PATH" ]; then
+        rm -f "$package_filename"
+      else
+        true
+      fi
+    fi
+  } >&4 2>&1
+}
+
+build_package() {
+  local package_name="$1"
+  shift
+
+  if [ "$#" -eq 0 ]; then
+    local commands="standard"
+  else
+    local commands="$*"
+  fi
+
+  echo "Installing ${package_name}..." >&2
+
+  [ -n "$HAS_PATCH" ] && apply_python_patch "$package_name"
+
+  for command in $commands; do
+    "build_package_${command}" "$package_name"
+  done
+}
+
+package_option() {
+  local package_name="$1"
+  local command_name="$2"
+  local variable="$(capitalize "${package_name}_${command_name}")_OPTS_ARRAY"
+  local array="$variable[@]"
+  shift 2
+  local value=( "${!array}" "$@" )
+  eval "$variable=( \"\${value[@]}\" )"
+}
+
+build_package_standard() {
+  local package_name="$1"
+
+  if [ "${MAKEOPTS+defined}" ]; then
+    MAKE_OPTS="$MAKEOPTS"
+  elif [ -z "${MAKE_OPTS+defined}" ]; then
+    MAKE_OPTS="-j $(num_cpu_cores)"
+  fi
+
+  # Support YAML_CONFIGURE_OPTS, PYTHON_CONFIGURE_OPTS, etc.
+  local package_var_name="$(capitalize "${package_name%%-*}")"
+  local PACKAGE_CONFIGURE="${package_var_name}_CONFIGURE"
+  local PACKAGE_PREFIX_PATH="${package_var_name}_PREFIX_PATH"
+  local PACKAGE_CONFIGURE_OPTS="${package_var_name}_CONFIGURE_OPTS"
+  local PACKAGE_CONFIGURE_OPTS_ARRAY="${package_var_name}_CONFIGURE_OPTS_ARRAY[@]"
+  local PACKAGE_MAKE_OPTS="${package_var_name}_MAKE_OPTS"
+  local PACKAGE_MAKE_OPTS_ARRAY="${package_var_name}_MAKE_OPTS_ARRAY[@]"
+  local PACKAGE_CFLAGS="${package_var_name}_CFLAGS"
+
+  [ "$package_var_name" = "PYTHON" ] && use_homebrew_readline || true
+
+  ( if [ "${CFLAGS+defined}" ] || [ "${!PACKAGE_CFLAGS+defined}" ]; then
+      export CFLAGS="$CFLAGS ${!PACKAGE_CFLAGS}"
+    fi
+    ${!PACKAGE_CONFIGURE:-./configure} --prefix="${!PACKAGE_PREFIX_PATH:-$PREFIX_PATH}" \
+                                       --libdir="${!PACKAGE_PREFIX_PATH:-$PREFIX_PATH}/lib" \
+                                       $CONFIGURE_OPTS ${!PACKAGE_CONFIGURE_OPTS} "${!PACKAGE_CONFIGURE_OPTS_ARRAY}"
+  ) >&4 2>&1
+
+  { "$MAKE" $MAKE_OPTS ${!PACKAGE_MAKE_OPTS} "${!PACKAGE_MAKE_OPTS_ARRAY}"
+    "$MAKE" install
+  } >&4 2>&1
+}
+
+build_package_autoconf() {
+  { autoconf
+  } >&4 2>&1
+}
+
+build_package_ruby() {
+  local package_name="$1"
+
+  { "$RUBY_BIN" setup.rb
+  } >&4 2>&1
+}
+
+build_package_python() {
+  local package_name="$1"
+
+  { "$PYTHON_BIN" setup.py install
+  } >&4 2>&1
+}
+
+build_package_ree_installer() {
+  build_package_auto_tcltk
+
+  local options=""
+  if [[ "Darwin" = "$(uname)" ]]; then
+    options="--no-tcmalloc"
+  fi
+
+  local option
+  for option in $RUBY_CONFIGURE_OPTS ${RUBY_CONFIGURE_OPTS_ARRAY[@]}; do
+    options="$options -c $option"
+  done
+
+  # Work around install_useful_libraries crash with --dont-install-useful-gems
+  mkdir -p "$PREFIX_PATH/lib/ruby/gems/1.8/gems"
+
+  { ./installer --auto "$PREFIX_PATH" --dont-install-useful-gems $options $CONFIGURE_OPTS
+  } >&4 2>&1
+}
+
+build_package_rbx() {
+  local package_name="$1"
+
+  { bundle --path=vendor/bundle
+    RUBYOPT="-rubygems $RUBYOPT" ./configure --prefix="$PREFIX_PATH" $RUBY_CONFIGURE_OPTS
+    rake install
+    fix_rbx_gem_binstubs "$PREFIX_PATH"
+    fix_rbx_irb "$PREFIX_PATH"
+  } >&4 2>&1
+}
+
+build_package_mruby() {
+  local package_name="$1"
+
+  { rake
+    mkdir -p "$PREFIX_PATH"
+    cp -fR build/host/* "$PREFIX_PATH"
+    cd "$PREFIX_PATH/bin"
+    ln -fs mruby ruby
+    ln -fs mirb irb
+  } >&4 2>&1
+}
+
+build_package_maglev() {
+  build_package_copy
+
+  { cd "${PREFIX_PATH}"
+    ./install.sh
+    cd "${PREFIX_PATH}/bin"
+    echo "Creating symlink for ruby*"
+    ln -fs maglev-ruby ruby
+    echo "Creating symlink for irb*"
+    ln -fs maglev-irb irb
+  } >&4 2>&1
+  echo
+  echo "Run 'maglev start' to start up the stone before using 'ruby' or 'irb'"
+}
+
+build_package_topaz() {
+  build_package_copy
+  { cd "${PREFIX_PATH}/bin"
+    echo "Creating symlink for ruby*"
+    ln -fs topaz ruby
+  } >&4 2>&1
+}
+
+topaz_architecture() {
+  case "$(uname -s)" in
+  "Darwin") echo "osx64";;
+  "Linux") [[ "$(uname -m)" = "x86_64" ]] && echo "linux64" || echo "linux32";;
+  *)
+    echo "no nightly builds available" >&2
+    exit 1;;
+  esac
+}
+
+build_package_jruby() {
+  build_package_copy
+  cd "${PREFIX_PATH}/bin"
+  ln -fs jruby ruby
+  install_jruby_launcher
+  remove_windows_files
+  fix_jruby_shebangs
+}
+
+install_jruby_launcher() {
+  cd "${PREFIX_PATH}/bin"
+  { ./ruby gem install jruby-launcher
+  } >&4 2>&1
+}
+
+fix_jruby_shebangs() {
+  for file in "${PREFIX_PATH}/bin"/*; do
+    if [ "$(head -c 20 "$file")" = "#!/usr/bin/env jruby" ]; then
+      sed -i.bak -E "1s:.+:#\!${PREFIX_PATH}/bin/jruby:" "$file"
+      rm "$file".bak
+    fi
+  done
+}
+
+remove_windows_files() {
+  cd "$PREFIX_PATH"
+  rm -f bin/*.exe bin/*.dll bin/*.bat bin/jruby.sh
+}
+
+build_package_jython() {
+  build_package_copy
+  { if [ -x "${PREFIX_PATH}/bin/jython" ] && [ ! -x "${PREFIX_PATH}/bin/python" ]; then
+      ( cd "${PREFIX_PATH}/bin" && ln -fs jython python )
+    fi
+  } >&4 2>&1
+}
+
+build_package_jython_builder() {
+  ant >&4 2>&1
+  ( cd "dist" && build_package_jython )
+}
+
+build_package_pypy() {
+  build_package_copy
+  { if [ -x "${PREFIX_PATH}/bin/pypy" ] && [ ! -x "${PREFIX_PATH}/bin/python" ]; then
+      ( cd "${PREFIX_PATH}/bin" && ln -fs pypy python )
+    fi
+  } >&4 2>&1
+}
+
+build_package_pypy_builder() {
+  if [ -f "rpython/bin/rpython" ]; then # pypy 2.x
+    python "rpython/bin/rpython" ${PYPY_OPTS:-"-Ojit"} "pypy/goal/targetpypystandalone.py" >&4 2>&1
+  elif [ -f "pypy/translator/goal/translate.py" ]; then # pypy 1.x
+    ( cd "pypy/translator/goal" && python "translate.py" ${PYPY_OPTS:-"--opt=jit"} "targetpypystandalone.py" ) 1>&4 2>&1
+  else
+    echo "not a pypy source tree" 1>&3
+    return 1
+  fi
+  if [ -x "pypy-c" ] && [ ! -x "bin/pypy" ]; then
+    mkdir -p "bin"
+    mv -f "pypy-c" "bin/pypy"
+  fi
+  build_package_pypy
+}
+
+build_package_copy() {
+  mkdir -p "$PREFIX_PATH"
+  cp -fR . "$PREFIX_PATH"
+}
+
+before_install_package() {
+  local stub=1
+  before_install_package_patch "$@"
+}
+
+before_install_package_patch() {
+# Apply built-in patches if patch was not given from stdin
+  if [ -z "$HAS_PATCH" ]; then
+    ( cat "${PYTHON_BUILD_ROOT}/share/python-build/patches/${DEFINITION_PATH##*/}/$1"/* || true ) 2>/dev/null 1>"$1.patch"
+    exec <&-
+    exec <"$1.patch"
+  fi
+  ORIG_HAS_PATCH="$HAS_PATCH"
+  HAS_PATCH=true
+}
+
+after_install_package() {
+  local stub=1
+  after_install_package_patch "$@"
+}
+
+after_install_package_patch() {
+  rm -f "$1.patch"
+  HAS_PATCH="$ORIG_HAS_PATCH"
+}
+
+fix_directory_permissions() {
+  # Ensure installed directories are not world-writable to avoid Bundler warnings
+  find "$PREFIX_PATH" -type d \( -perm -020 -o -perm -002 \) -exec chmod go-w {} \;
+}
+
+fix_rbx_gem_binstubs() {
+  local prefix="$1"
+  local gemdir="${prefix}/gems/bin"
+  local bindir="${prefix}/bin"
+  local file binstub
+  # Symlink Rubinius' `gems/bin/` into `bin/`
+  if [ -d "$gemdir" ]; then
+    for file in "$gemdir"/*; do
+      binstub="${bindir}/${file##*/}"
+      rm -f "$binstub"
+      sed -E "s:^#\!.+:#\!${bindir}/ruby:" < "$file" > "$binstub"
+      chmod +x "$binstub"
+    done
+    rm -rf "$gemdir"
+    ln -s ../bin "$gemdir"
+  fi
+}
+
+fix_rbx_irb() {
+  local prefix="$1"
+  "${prefix}/bin/irb" --version &>/dev/null ||
+    "${prefix}/bin/gem" install rubysl-tracer -v '~> 2.0' --no-rdoc --no-ri &>/dev/null ||
+    true
+}
+
+require_gcc() {
+  require_cc "gcc"
+}
+
+require_cc() {
+  while [ -n "$1" ]; do
+    if [ "$1" = "--if" ]; then
+      "$2" || return 0
+      shift 2
+    else
+      break
+    fi
+  done
+
+  local cc
+  local ccname="${1:-cc}"
+  cc="$(locate_cc "$ccname" || true)"
+
+  if [ -z "$cc" ]; then
+    local esc=$'\033'
+    { echo
+      echo "${esc}[1mERROR${esc}[0m: This package must be compiled with $ccname, but python-build couldn't"
+      echo "find a suitable \`$ccname\` executable on your system. Please install $ccname"
+      echo "and try again."
+      echo
+    } >&3
+    return 1
+  fi
+ 
+  export CC="$cc"
+} 
+
+locate_gcc() {
+  locate_cc "gcc" "$@"
+}
+
+locate_cc() {
+  local ccname="$1"; shift
+  if [ -z "$ccname" ]; then
+    return 1
+  fi
+  local cc ccs
+  IFS=: ccs=($(ccs_in_path "${ccname}"))
+
+  verify_cc "${ccname}" "$CC" ||
+  verify_cc "${ccname}" "$(command -v "${ccname}" || true)" || {
+    for cc in "${ccs[@]}"; do
+      verify_cc "${ccname}" "$cc" && break || true
+    done
+  }
+
+  return 1
+}
+
+gccs_in_path() {
+  ccs_in_path "gcc" "$@"
+}
+
+ccs_in_path() {
+  local ccname="$1"; shift
+  if [ -z "$ccname" ]; then
+    return 1
+  fi
+  local cc path paths
+  local ccs=()
+  IFS=: paths=($PATH)
+
+  shopt -s nullglob
+  for path in "${paths[@]}"; do
+    for cc in "$path"/${ccname}-*; do
+      ccs["${#ccs[@]}"]="$cc"
+    done
+  done
+  shopt -u nullglob
+
+  printf :%s "${ccs[@]}"
+}
+
+verify_gcc() {
+  verify_cc "gcc" "$@"
+}
+
+verify_cc() {
+  local ccname="$1"; shift
+  if [ -z "$ccname" ]; then
+    return 1
+  fi
+  local cc="$1"
+  if [ -z "$cc" ]; then
+    return 1
+  fi
+
+  local version="$("$cc" --version || true)"
+  if [ -z "$version" ]; then
+    return 1
+  fi
+
+  echo "$cc"
+}
+
+require_java() {
+  local java="$(locate_java || true)"
+
+  if [ -z "$java" ]; then
+    local esc=$'\033'
+    { echo
+      echo "${esc}[1mERROR${esc}[0m: This package must be installed with java, but python-build couldn't"
+      echo "find a suitable \`java\` executable on your system. Please install Java"
+      echo "and try again."
+      echo
+    } >&3
+    return 1
+  fi
+
+  export JAVA="$java"
+}
+
+locate_java() {
+  local java javas
+  IFS=: javas=($(javas_in_path))
+
+  verify_java "$JAVA" ||
+  verify_java "$(command -v java || true)" || {
+    for java in "${javas[@]}"; do
+      verify_java "$java" && break || true
+    done
+  }
+
+  return 1
+}
+
+javas_in_path() {
+  local java path paths
+  local javas=()
+  IFS=: paths=($PATH)
+
+  shopt -s nullglob
+  for path in "${paths[@]}"; do
+    local java="$path"/java
+    if [ -x "$java" ]; then
+      javas["${#javas[@]}"]="$java"
+    fi
+  done
+  shopt -u nullglob
+
+  printf :%s "${javas[@]}"
+}
+
+verify_java() {
+  local java="$1"
+  if [ -z "$java" ]; then
+    return 1
+  fi
+
+  if [ ! -x "$java" ]; then
+    return 1
+  fi
+
+  echo "$java"
+}
+
+needs_yaml() {
+  [[ "$RUBY_CONFIGURE_OPTS" != *--with-libyaml-dir=* ]] &&
+  ! use_homebrew_yaml
+}
+
+use_homebrew_yaml() {
+  local libdir="$(brew --prefix libyaml 2>/dev/null || true)"
+  if [ -d "$libdir" ]; then
+    package_option ruby configure --with-libyaml-dir="$libdir"
+  else
+    return 1
+  fi
+}
+
+has_broken_mac_readline() {
+  if [ "$(uname -s)" = "Darwin" ] && ! use_homebrew_readline; then
+    # MacOSX 10.4 has a broken readline.
+    # https://github.com/yyuu/pyenv/issues/23
+    local retval=1
+    local conftest="$BUILD_PATH/has_broken_mac_readline.h"
+    if [ "$(uname -s)" = "Darwin" ]; then
+      echo "#include <readline/rlconf.h>" > "$conftest"
+      "${CPP:-cpp}" $CPPFLAGS "$conftest" 1>/dev/null 2>&1 || retval=0
+      rm -f "$conftest"
+    fi
+    return "$retval"
+  else
+    return 1
+  fi
+}
+
+use_homebrew_readline() {
+    local libdir="$(brew --prefix readline 2>/dev/null || true)"
+    if [ -d "$libdir" ]; then
+      CPPFLAGS="-I$libdir/include $CPPFLAGS"
+      LDFLAGS="-L$libdir/lib $LDFLAGS"
+    else
+      return 1
+    fi
+}
+
+has_broken_mac_openssl() {
+  [ "$(uname -s)" = "Darwin" ] &&
+  [[ "$(openssl version 2>/dev/null || true)" = "OpenSSL 0.9.8"?* ]] &&
+  ! use_homebrew_openssl
+}
+
+use_homebrew_openssl() {
+  local ssldir="$(brew --prefix openssl 2>/dev/null || true)"
+  if [ -d "$ssldir" ]; then
+    CPPFLAGS="-I$ssldir/include $CPPFLAGS"
+    LDFLAGS="-L$ssldir/lib $LDFLAGS"
+  else
+    return 1
+  fi
+}
+
+build_package_mac_openssl() {
+  # Install to a subdirectory since we don't want shims for bin/openssl.
+  OPENSSL_PREFIX_PATH="${PREFIX_PATH}/openssl"
+
+  # Put openssl.conf, certs, etc in ~/.pyenv/versions/*/openssl/ssl
+  OPENSSLDIR="${OPENSSLDIR:-$OPENSSL_PREFIX_PATH/ssl}"
+
+  # Tell Python to use this openssl for its extension.
+  package_option python configure --with-openssl-dir="$OPENSSL_PREFIX_PATH"
+
+  # Hint OpenSSL that we prefer a 64-bit build.
+  export KERNEL_BITS="64"
+  OPENSSL_CONFIGURE="${OPENSSL_CONFIGURE:-./config}"
+
+  # Compile a shared lib with zlib dynamically linked, no kerberos.
+  package_option openssl configure --openssldir="$OPENSSLDIR" zlib-dynamic no-krb5 shared
+
+  # Default MAKE_OPTS are -j 2 which can confuse the build. Thankfully, make
+  # gives precedence to the last -j option, so we can override that.
+  package_option openssl make -j 1
+
+  build_package_standard "$@"
+
+  # Extract root certs from the system keychain in .pem format and rehash.
+  local pem_file="$OPENSSLDIR/cert.pem"
+  security find-certificate -a -p /Library/Keychains/System.keychain > "$pem_file"
+  security find-certificate -a -p /System/Library/Keychains/SystemRootCertificates.keychain >> "$pem_file"
+}
+
+# Post-install check that the openssl extension was built.
+build_package_verify_openssl() {
+  "$RUBY_BIN" -e 'begin
+    require "openssl"
+  rescue LoadError
+    abort "The Ruby openssl extension was not compiled. Missing the OpenSSL lib?"
+  end' >&4 2>&1
+}
+
+# Ensure that directories listed in LDFLAGS exist
+build_package_ldflags_dirs() {
+  local arg
+  for arg in $LDFLAGS; do
+    case "$arg" in
+    -L* ) mkdir -p "${arg#-L}" ;;
+    esac
+  done
+}
+
+build_package_auto_tcltk() {
+  if [ "Darwin" = "$(uname -s)" ] && [ ! -d /usr/include/X11 ]; then
+    if [ -d /opt/X11/include ]; then
+      if [[ "$CPPFLAGS" != *-I/opt/X11/include* ]]; then
+        export CPPFLAGS="-I/opt/X11/include $CPPFLAGS"
+      fi
+    else
+      package_option ruby configure --without-tk
+    fi
+  fi
+}
+
+rake() {
+  if [ -e "./Gemfile" ]; then
+    bundle exec rake "$@"
+  else
+    isolated_gem_dependency "rake --version" rake -v '~> 10.1.0'
+    command rake "$@"
+  fi
+}
+
+bundle() {
+  isolated_gem_dependency "bundle --version" bundler -v '~> 1.3.5'
+  command bundle "$@"
+}
+
+isolated_gem_dependency() {
+  set +E
+  ( command $1 &>/dev/null ) || {
+    set -E
+    shift 1
+    isolated_gem_install "$@"
+  }
+  set -E
+}
+
+isolated_gem_install() {
+  export GEM_HOME="${PWD}/.gem"
+  export PATH="${GEM_HOME}/bin:${PATH}"
+  gem install "$@"
+}
+
+apply_python_patch() {
+  case "$1" in
+  Python-* | jython-* | pypy-* )
+    patch -p0 -i "${2:--}"
+    ;;
+  esac
+}
+
+has_broken_mac_llvm_gcc() {
+  [ "$(uname -s)" = "Darwin" ] &&
+  [[ "$(gcc --version 2>/dev/null || true)" == *"llvm-gcc-4.2"* ]]
+}
+
+build_package_verify_python() {
+  # Check the existence of ./bin since pyenv-which searches the executables from there
+  if [ ! -d "${PREFIX_PATH}/bin" ]; then
+    echo "pyenv: invalid Python installation" >&4 2>&1
+    return 1
+  fi
+
+  # Create `python` executable if missing. Especially for Py3k.
+  if [ ! -e "${PREFIX_PATH}/bin/python" ]; then
+    local python
+    for python in "${PREFIX_PATH}/bin/python"*; do
+      if expr "$(basename "$python")" : '^python[0-9][0-9]*\.[0-9][0-9]*$' 2>&1 >/dev/null; then
+        ( cd "${PREFIX_PATH}/bin" && ln -fs "$(basename "$python")" python )
+        break
+      fi
+    done
+  fi
+
+  if [ ! -x "${PYTHON_BIN}" ]; then
+    echo "pyenv: invalid Python executable: ${PYTHON_BIN}" >&4 2>&1
+    return 1
+  fi
+}
+
+# Post-install check for Python 2.4.x
+build_package_verify_py24() {
+  build_package_verify_python "$@"
+  build_package_verify_readline "$@"
+  build_package_verify_zlib "$@"
+  build_package_verify_bz2 "$@"
+}
+
+# Post-install check for Python 2.5.x
+build_package_verify_py25() {
+  build_package_verify_py24 "$@"
+  build_package_verify_sqlite3 "$@"
+}
+
+# Post-install check for Python 2.6.x
+build_package_verify_py26() {
+  build_package_verify_py25 "$@"
+  build_package_verify_ssl "$@"
+}
+
+# Post-install check for Python 2.7.x
+build_package_verify_py27() {
+  build_package_verify_py26 "$@"
+}
+
+# Post-install check for Python 3.0.x
+build_package_verify_py30() {
+  build_package_verify_python "$@"
+  build_package_verify_readline "$@"
+  build_package_verify_ssl "$@"
+  build_package_verify_sqlite3 "$@"
+  build_package_verify_zlib "$@"
+  build_package_verify_bz2 "$@"
+}
+
+# Post-install check for Python 3.1.x
+build_package_verify_py31() {
+  build_package_verify_py30 "$@"
+}
+
+# Post-install check for Python 3.2.x
+build_package_verify_py32() {
+  build_package_verify_py31 "$@"
+}
+
+# Post-install check for Python 3.3.x
+build_package_verify_py33() {
+  build_package_verify_py32 "$@"
+}
+
+# Post-install check for Python 3.4.x
+build_package_verify_py34() {
+  build_package_verify_py33 "$@"
+}
+
+build_package_verify_import() {
+  local module="${1}"
+  local module_name="${2:-${module}}"
+  { if ! "$PYTHON_BIN" -c "import ${module}"; then
+      echo
+      echo "The Python ${module} extension was not compiled. Missing the ${module_name}?"
+      echo
+      echo "Please consult to the Wiki page to fix the problem."
+      echo "https://github.com/yyuu/pyenv/wiki/Common-build-problems"
+      echo
+      return 1
+    fi
+  } >&4 2>&1
+} 
+
+# Post-install check that the readline extension was built.
+build_package_verify_readline() {
+  build_package_verify_import "readline" "GNU readline lib"
+}
+
+# Post-install check that the ssl extension was built.
+build_package_verify_ssl() {
+  build_package_verify_import "ssl" "OpenSSL lib"
+}
+
+# Post-install check that the sqlite3 extension was built.
+build_package_verify_sqlite3() {
+  build_package_verify_import "sqlite3" "SQLite3 lib"
+}
+
+# Post-install check that the zlib extension was built.
+build_package_verify_zlib() {
+  build_package_verify_import "zlib" "zlib"
+}
+
+# Post-install check that the bz2 extension was built.
+build_package_verify_bz2() {
+  build_package_verify_import "bz2" "bzip2 lib"
+}
+
+version() {
+  echo "python-build ${PYTHON_BUILD_VERSION}"
+}
+
+usage() {
+  { version
+    echo "usage: python-build [-k|--keep] [-v|--verbose] [-p|--patch] [-g|--debug] definition prefix"
+    echo "       python-build --definitions"
+  } >&2
+
+  if [ -z "$1" ]; then
+    exit 1
+  fi
+}
+
+list_definitions() {
+  { for definition in "${PYTHON_BUILD_ROOT}/share/python-build/"*; do
+      [ -f "${definition}" ] && echo "${definition##*/}"
+    done
+  } | sort
+}
+
+
+
+unset VERBOSE
+unset KEEP_BUILD_PATH
+unset HAS_PATCH
+unset DEBUG
+PYTHON_BUILD_ROOT="$(abs_dirname "$0")/.."
+
+parse_options "$@"
+
+for option in "${OPTIONS[@]}"; do
+  case "$option" in
+  "h" | "help" )
+    usage without_exiting
+    { echo
+      echo "  -k/--keep        Do not remove source tree after installation"
+      echo "  -v/--verbose     Verbose mode: print compilation status to stdout"
+      echo "  -p/--patch       Apply a patch from stdin before building"
+      echo "  -g/--debug       Build a debug version"
+      echo "  --definitions    List all built-in definitions"
+      echo
+    } >&2
+    exit 0
+    ;;
+  "definitions" )
+    list_definitions
+    exit 0
+    ;;
+  "k" | "keep" )
+    KEEP_BUILD_PATH=true
+    ;;
+  "v" | "verbose" )
+    VERBOSE=true
+    ;;
+  "p" | "patch" )
+    HAS_PATCH=true
+    ;;
+  "g" | "debug" )
+    DEBUG=true
+    ;;
+  "version" )
+    version
+    exit 0
+    ;;
+  esac
+done
+
+DEFINITION_PATH="${ARGUMENTS[0]}"
+if [ -z "$DEFINITION_PATH" ]; then
+  usage
+elif [ ! -e "$DEFINITION_PATH" ]; then
+  BUILTIN_DEFINITION_PATH="${PYTHON_BUILD_ROOT}/share/python-build/${DEFINITION_PATH}"
+  if [ -e "$BUILTIN_DEFINITION_PATH" ]; then
+    DEFINITION_PATH="$BUILTIN_DEFINITION_PATH"
+  else
+    echo "python-build: definition not found: ${DEFINITION_PATH}" >&2
+    exit 2
+  fi
+fi
+
+PREFIX_PATH="${ARGUMENTS[1]}"
+if [ -z "$PREFIX_PATH" ]; then
+  usage
+elif [ "${PREFIX_PATH#/}" = "$PREFIX_PATH" ]; then
+  PREFIX_PATH="${PWD}/${PREFIX_PATH}"
+fi
+
+if [ -z "$TMPDIR" ]; then
+  TMP="/tmp"
+else
+  TMP="${TMPDIR%/}"
+fi
+
+if [ ! -w "$TMP" ] || [ ! -x "$TMP" ]; then
+  echo "python-build: TMPDIR=$TMP is set to a non-accessible location" >&2
+  exit 1
+fi
+
+# Work around warnings building Ruby 2.0 on Clang 2.x:
+# pass -Wno-error=shorten-64-to-32 if the compiler accepts it.
+#
+# When we set CFLAGS, Ruby won't apply its default flags, though. Since clang
+# builds 1.9.x and 2.x only, where -O3 is default, we can safely set that flag.
+# Ensure it's the first flag since later flags take precedence.
+#if "${CC:-cc}" -x c /dev/null -E -Wno-error=shorten-64-to-32 &>/dev/null; then
+#  PYTHON_CFLAGS="-O3 -Wno-error=shorten-64-to-32 $PYTHON_CFLAGS"
+#fi
+
+if [ -z "$MAKE" ]; then
+  if [[ "FreeBSD" = "$(uname -s)" ]]; then
+    export MAKE="gmake"
+  else
+    export MAKE="make"
+  fi
+fi
+
+if [ -n "$PYTHON_BUILD_CACHE_PATH" ] && [ -d "$PYTHON_BUILD_CACHE_PATH" ]; then
+  PYTHON_BUILD_CACHE_PATH="${PYTHON_BUILD_CACHE_PATH%/}"
+else
+  unset PYTHON_BUILD_CACHE_PATH
+fi
+
+if [ -z "$PYTHON_BUILD_MIRROR_URL" ]; then
+  PYTHON_BUILD_MIRROR_URL="http://yyuu.github.io/pythons"
+else
+  PYTHON_BUILD_MIRROR_URL="${PYTHON_BUILD_MIRROR_URL%/}"
+fi
+
+if [ -n "$PYTHON_BUILD_SKIP_MIRROR" ]; then
+  unset PYTHON_BUILD_MIRROR_URL
+fi
+
+if echo test | compute_md5 >/dev/null; then
+  HAS_MD5_SUPPORT=1
+else
+  unset HAS_MD5_SUPPORT
+  unset PYTHON_BUILD_MIRROR_URL
+fi
+
+if [ -n "$DEBUG" ]; then
+  PYTHON_CONFIGURE_OPTS="--with-pydebug $PYTHON_CONFIGURE_OPTS"
+fi
+
+if [[ "$PYTHON_CONFIGURE_OPTS" == *"--enable-shared"* ]] && [[ "$LDFLAGS" != *"-rpath="* ]]; then
+  # The ld on Darwin embeds the full paths to each dylib by default
+  if [[ "Darwin" != "$(uname -s)" ]]; then
+    export LDFLAGS="-Wl,-rpath=${PREFIX_PATH}/lib ${LDFLAGS}"
+  fi
+fi
+
+SEED="$(date "+%Y%m%d%H%M%S").$$"
+LOG_PATH="${TMP}/python-build.${SEED}.log"
+PYTHON_BIN="${PREFIX_PATH}/bin/python"
+CWD="$(pwd)"
+
+if [ -z $PYTHON_BUILD_BUILD_PATH ]; then
+  BUILD_PATH="${TMP}/python-build.${SEED}"
+else
+  BUILD_PATH="$PYTHON_BUILD_BUILD_PATH"
+fi
+
+exec 4<> "$LOG_PATH" # open the log file at fd 4
+if [ -n "$VERBOSE" ]; then
+  tail -f "$LOG_PATH" &
+  TAIL_PID=$!
+  trap "kill $TAIL_PID" SIGINT SIGTERM EXIT
+fi
+
+export LDFLAGS="-L${PREFIX_PATH}/lib ${LDFLAGS}"
+export CPPFLAGS="-I${PREFIX_PATH}/include ${CPPFLAGS}"
+
+unset PYTHONHOME
+unset PYTHONPATH
+
+trap build_failed ERR
+mkdir -p "$BUILD_PATH"
+source "$DEFINITION_PATH"
+[ -z "${KEEP_BUILD_PATH}" ] && rm -fr "$BUILD_PATH"
+trap - ERR
