@@ -1,30 +1,30 @@
-unset RBENV_VERSION
-unset RBENV_DIR
+unset PYENV_VERSION
+unset PYENV_DIR
 
-RBENV_TEST_DIR="$(mktemp -d --tmpdir=$BATS_TMPDIR rbenv.bats.XXX)"
+PYENV_TEST_DIR="${BATS_TMPDIR}/pyenv"
 
 # guard against executing this block twice due to bats internals
-if [ "$RBENV_ROOT" != "${RBENV_TEST_DIR}/root" ]; then
-  export RBENV_ROOT="${RBENV_TEST_DIR}/root"
-  export HOME="${RBENV_TEST_DIR}/home"
+if [ "$PYENV_ROOT" != "${PYENV_TEST_DIR}/root" ]; then
+  export PYENV_ROOT="${PYENV_TEST_DIR}/root"
+  export HOME="${PYENV_TEST_DIR}/home"
 
   PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-  PATH="${RBENV_TEST_DIR}/bin:$PATH"
+  PATH="${PYENV_TEST_DIR}/bin:$PATH"
   PATH="${BATS_TEST_DIRNAME}/../libexec:$PATH"
   PATH="${BATS_TEST_DIRNAME}/libexec:$PATH"
-  PATH="${RBENV_ROOT}/shims:$PATH"
+  PATH="${PYENV_ROOT}/shims:$PATH"
   export PATH
 fi
 
 teardown() {
-  rm -rf "$RBENV_TEST_DIR"
+  rm -rf "$PYENV_TEST_DIR"
 }
 
 flunk() {
   { if [ "$#" -eq 0 ]; then cat -
     else echo "$@"
     fi
-  } | sed "s:${RBENV_TEST_DIR}:TEST_DIR:g" >&2
+  } | sed "s:${PYENV_TEST_DIR}:TEST_DIR:g" >&2
   return 1
 }
 
@@ -95,15 +95,15 @@ assert() {
 }
 
 # Output a modified PATH that ensures that the given executable is not present,
-# but in which system utils necessary for rbenv operation are still available.
+# but in which system utils necessary for pyenv operation are still available.
 path_without() {
   local exe="$1"
   local path="${PATH}:"
   local found alt util
   for found in $(which -a "$exe"); do
     found="${found%/*}"
-    if [ "$found" != "${RBENV_ROOT}/shims" ]; then
-      alt="${RBENV_TEST_DIR}/$(echo "${found#/}" | tr '/' '-')"
+    if [ "$found" != "${PYENV_ROOT}/shims" ]; then
+      alt="${PYENV_TEST_DIR}/$(echo "${found#/}" | tr '/' '-')"
       mkdir -p "$alt"
       for util in bash head cut readlink greadlink; do
         if [ -x "${found}/$util" ]; then
