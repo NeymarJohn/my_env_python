@@ -1,4 +1,6 @@
 install: git clone https://github.com/sstephenson/bats.git
-script: bats/bin/bats --tap test
-# skips unnecessary Ruby-specific setup
+script: bats/bin/bats --tap test plugins/python-build/test
 language: c
+notifications:
+  email:
+    on_success: never
