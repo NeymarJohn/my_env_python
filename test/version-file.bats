@@ -3,8 +3,8 @@
 load test_helper
 
 setup() {
-  mkdir -p "$RBENV_TEST_DIR"
-  cd "$RBENV_TEST_DIR"
+  mkdir -p "$PYENV_TEST_DIR"
+  cd "$PYENV_TEST_DIR"
 }
 
 create_file() {
@@ -13,87 +13,87 @@ create_file() {
 }
 
 @test "prints global file if no version files exist" {
-  assert [ ! -e "${RBENV_ROOT}/version" ]
-  assert [ ! -e ".ruby-version" ]
-  run rbenv-version-file
-  assert_success "${RBENV_ROOT}/version"
+  assert [ ! -e "${PYENV_ROOT}/version" ]
+  assert [ ! -e ".python-version" ]
+  run pyenv-version-file
+  assert_success "${PYENV_ROOT}/version"
 }
 
 @test "detects 'global' file" {
-  create_file "${RBENV_ROOT}/global"
-  run rbenv-version-file
-  assert_success "${RBENV_ROOT}/global"
+  create_file "${PYENV_ROOT}/global"
+  run pyenv-version-file
+  assert_success "${PYENV_ROOT}/global"
 }
 
 @test "detects 'default' file" {
-  create_file "${RBENV_ROOT}/default"
-  run rbenv-version-file
-  assert_success "${RBENV_ROOT}/default"
+  create_file "${PYENV_ROOT}/default"
+  run pyenv-version-file
+  assert_success "${PYENV_ROOT}/default"
 }
 
 @test "'version' has precedence over 'global' and 'default'" {
-  create_file "${RBENV_ROOT}/version"
-  create_file "${RBENV_ROOT}/global"
-  create_file "${RBENV_ROOT}/default"
-  run rbenv-version-file
-  assert_success "${RBENV_ROOT}/version"
+  create_file "${PYENV_ROOT}/version"
+  create_file "${PYENV_ROOT}/global"
+  create_file "${PYENV_ROOT}/default"
+  run pyenv-version-file
+  assert_success "${PYENV_ROOT}/version"
 }
 
 @test "in current directory" {
-  create_file ".ruby-version"
-  run rbenv-version-file
-  assert_success "${RBENV_TEST_DIR}/.ruby-version"
+  create_file ".python-version"
+  run pyenv-version-file
+  assert_success "${PYENV_TEST_DIR}/.python-version"
 }
 
 @test "legacy file in current directory" {
-  create_file ".rbenv-version"
-  run rbenv-version-file
-  assert_success "${RBENV_TEST_DIR}/.rbenv-version"
+  create_file ".pyenv-version"
+  run pyenv-version-file
+  assert_success "${PYENV_TEST_DIR}/.pyenv-version"
 }
 
-@test ".ruby-version has precedence over legacy file" {
-  create_file ".ruby-version"
-  create_file ".rbenv-version"
-  run rbenv-version-file
-  assert_success "${RBENV_TEST_DIR}/.ruby-version"
+@test ".python-version has precedence over legacy file" {
+  create_file ".python-version"
+  create_file ".pyenv-version"
+  run pyenv-version-file
+  assert_success "${PYENV_TEST_DIR}/.python-version"
 }
 
 @test "in parent directory" {
-  create_file ".ruby-version"
+  create_file ".python-version"
   mkdir -p project
   cd project
-  run rbenv-version-file
-  assert_success "${RBENV_TEST_DIR}/.ruby-version"
+  run pyenv-version-file
+  assert_success "${PYENV_TEST_DIR}/.python-version"
 }
 
 @test "topmost file has precedence" {
-  create_file ".ruby-version"
-  create_file "project/.ruby-version"
+  create_file ".python-version"
+  create_file "project/.python-version"
   cd project
-  run rbenv-version-file
-  assert_success "${RBENV_TEST_DIR}/project/.ruby-version"
+  run pyenv-version-file
+  assert_success "${PYENV_TEST_DIR}/project/.python-version"
 }
 
 @test "legacy file has precedence if higher" {
-  create_file ".ruby-version"
-  create_file "project/.rbenv-version"
+  create_file ".python-version"
+  create_file "project/.pyenv-version"
   cd project
-  run rbenv-version-file
-  assert_success "${RBENV_TEST_DIR}/project/.rbenv-version"
+  run pyenv-version-file
+  assert_success "${PYENV_TEST_DIR}/project/.pyenv-version"
 }
 
-@test "RBENV_DIR has precedence over PWD" {
-  create_file "widget/.ruby-version"
-  create_file "project/.ruby-version"
+@test "PYENV_DIR has precedence over PWD" {
+  create_file "widget/.python-version"
+  create_file "project/.python-version"
   cd project
-  RBENV_DIR="${RBENV_TEST_DIR}/widget" run rbenv-version-file
-  assert_success "${RBENV_TEST_DIR}/widget/.ruby-version"
+  PYENV_DIR="${PYENV_TEST_DIR}/widget" run pyenv-version-file
+  assert_success "${PYENV_TEST_DIR}/widget/.python-version"
 }
 
-@test "PWD is searched if RBENV_DIR yields no results" {
+@test "PWD is searched if PYENV_DIR yields no results" {
   mkdir -p "widget/blank"
-  create_file "project/.ruby-version"
+  create_file "project/.python-version"
   cd project
-  RBENV_DIR="${RBENV_TEST_DIR}/widget/blank" run rbenv-version-file
-  assert_success "${RBENV_TEST_DIR}/project/.ruby-version"
+  PYENV_DIR="${PYENV_TEST_DIR}/widget/blank" run pyenv-version-file
+  assert_success "${PYENV_TEST_DIR}/project/.python-version"
 }
