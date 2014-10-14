@@ -33,6 +33,7 @@ tarball() {
 
   executable "$configure" <<OUT
 #!$BASH
+echo "$name: CPPFLAGS=\\"\$CPPFLAGS\\" LDFLAGS=\\"\$LDFLAGS\\"" >> build.log
 echo "$name: \$@" \${PYTHONOPT:+PYTHONOPT=\$PYTHONOPT} >> build.log
 OUT
 
@@ -56,7 +57,7 @@ assert_build_log() {
 }
 
 @test "yaml is installed for python" {
-  cached_tarball "yaml-0.1.5"
+  cached_tarball "yaml-0.1.6"
   cached_tarball "Python-3.2.1"
 
   stub brew false
@@ -69,9 +70,11 @@ assert_build_log() {
   unstub make
 
   assert_build_log <<OUT
-yaml-0.1.5: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
+yaml-0.1.6: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
+yaml-0.1.6: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
 make -j 2
 make install
+Python-3.2.1: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
 Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
 make -j 2
 make install
@@ -79,25 +82,55 @@ OUT
 }
 
 @test "apply python patch before building" {
-  cached_tarball "yaml-0.1.5"
+  cached_tarball "yaml-0.1.6"
   cached_tarball "Python-3.2.1"
 
   stub brew false
   stub_make_install
   stub_make_install
-  stub patch ' : echo patch "$@" >> build.log'
+  stub patch ' : echo patch "$@" | sed -E "s/\.[[:alnum:]]+$/.XXX/" >> build.log'
 
-  install_fixture --patch definitions/needs-yaml
+  TMPDIR="$TMP" install_fixture --patch definitions/needs-yaml <<<""
   assert_success
 
   unstub make
   unstub patch
 
   assert_build_log <<OUT
-yaml-0.1.5: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
+yaml-0.1.6: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
+yaml-0.1.6: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
 make -j 2
 make install
-patch -p0 -i -
+patch -p0 --force -i $TMP/python-patch.XXX
+Python-3.2.1: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
+Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
+make -j 2
+make install
+OUT
+}
+
+@test "apply python patch from git diff before building" {
+  cached_tarball "yaml-0.1.6"
+  cached_tarball "Python-3.2.1"
+
+  stub brew false
+  stub_make_install
+  stub_make_install
+  stub patch ' : echo patch "$@" | sed -E "s/\.[[:alnum:]]+$/.XXX/" >> build.log'
+
+  TMPDIR="$TMP" install_fixture --patch definitions/needs-yaml <<<"diff --git a/script.py"
+  assert_success
+
+  unstub make
+  unstub patch
+
+  assert_build_log <<OUT
+yaml-0.1.6: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
+yaml-0.1.6: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
+make -j 2
+make install
+patch -p1 --force -i $TMP/python-patch.XXX
+Python-3.2.1: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
 Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
 make -j 2
 make install
@@ -120,7 +153,8 @@ OUT
   unstub make
 
   assert_build_log <<OUT
-Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib CPPFLAGS=-I$brew_libdir/include LDFLAGS=-L$brew_libdir/lib
+Python-3.2.1: CPPFLAGS="-I$brew_libdir/include -I${TMP}/install/include " LDFLAGS="-L$brew_libdir/lib -L${TMP}/install/lib "
+Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
 make -j 2
 make install
 OUT
@@ -144,7 +178,8 @@ DEF
   unstub make
 
   assert_build_log <<OUT
-Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib CPPFLAGS=-I$readline_libdir/include LDFLAGS=-L$readline_libdir/lib
+Python-3.2.1: CPPFLAGS="-I$readline_libdir/include -I${TMP}/install/include " LDFLAGS="-L$readline_libdir/lib -L${TMP}/install/lib "
+Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
 make -j 2
 make install
 OUT
@@ -153,6 +188,7 @@ OUT
 @test "readline is not linked from Homebrew when explicitly defined" {
   cached_tarball "Python-3.2.1"
 
+  # python-build
   readline_libdir="$TMP/custom"
   mkdir -p "$readline_libdir/include/readline"
   touch "$readline_libdir/include/readline/rlconf.h"
@@ -170,6 +206,7 @@ DEF
   unstub make
 
   assert_build_log <<OUT
+Python-3.2.1: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
 Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib CPPFLAGS=-I$readline_libdir/include LDFLAGS=-L$readline_libdir/lib
 make -j 2
 make install
@@ -179,6 +216,7 @@ OUT
 @test "number of CPU cores defaults to 2" {
   cached_tarball "Python-3.2.1"
 
+  stub uname '-s : echo Darwin'
   stub uname '-s : echo Darwin'
   stub sysctl false
   stub_make_install
@@ -193,6 +231,7 @@ DEF
   unstub make
 
   assert_build_log <<OUT
+Python-3.2.1: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
 Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
 make -j 2
 make install
@@ -202,6 +241,7 @@ OUT
 @test "number of CPU cores is detected on Mac" {
   cached_tarball "Python-3.2.1"
 
+  stub uname '-s : echo Darwin'
   stub uname '-s : echo Darwin'
   stub sysctl '-n hw.ncpu : echo 4'
   stub_make_install
@@ -217,6 +257,7 @@ DEF
   unstub make
 
   assert_build_log <<OUT
+Python-3.2.1: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
 Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
 make -j 4
 make install
@@ -237,6 +278,7 @@ DEF
   unstub make
 
   assert_build_log <<OUT
+Python-3.2.1: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
 Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
 make -j 2
 make install DOGE="such wow"
@@ -257,6 +299,7 @@ DEF
   unstub make
 
   assert_build_log <<OUT
+Python-3.2.1: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
 Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
 make -j 2
 make install DOGE="such wow"
@@ -275,6 +318,7 @@ OUT
 @test "make on FreeBSD defaults to gmake" {
   cached_tarball "Python-3.2.1"
 
+  stub uname "-s : echo FreeBSD"
   stub uname "-s : echo FreeBSD"
   MAKE=gmake stub_make_install
 
@@ -308,6 +352,7 @@ DEF
 
   assert_build_log <<OUT
 apply -p1 -i /my/patch.diff
+Python-3.2.1: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
 Python-3.2.1: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
 make -j 2
 make install
@@ -346,4 +391,38 @@ OUT
   touch "${TMP}/build-definition"
   run python-build "${TMP}/build-definition" "$INSTALL_ROOT"
   assert_failure "python-build: TMPDIR=$TMPDIR is set to a non-accessible location"
+}
+
+@test "setting MACOSX_DEPLOYMENT_TARGET from the product version of OS X" {
+  stub uname '-s : echo Darwin'
+  stub sw_vers '-productVersion : echo 10.9.4'
+
+  run_inline_definition <<DEF
+echo "MACOSX_DEPLOYMENT_TARGET=\${MACOSX_DEPLOYMENT_TARGET}" > "$INSTALL_ROOT/build.log"
+DEF
+  assert_success
+
+  assert_build_log <<OUT
+MACOSX_DEPLOYMENT_TARGET=10.9
+OUT
+
+  unstub uname
+  unstub sw_vers
+}
+
+@test "not setting MACOSX_DEPLOYMENT_TARGET if the product version of OS X is not available" {
+  stub uname '-s : echo Darwin'
+  stub sw_vers false
+
+  run_inline_definition <<DEF
+echo "MACOSX_DEPLOYMENT_TARGET=\${MACOSX_DEPLOYMENT_TARGET}" > "$INSTALL_ROOT/build.log"
+DEF
+  assert_success
+
+  assert_build_log <<OUT
+MACOSX_DEPLOYMENT_TARGET=
+OUT
+
+  unstub uname
+  unstub sw_vers
 }

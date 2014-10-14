@@ -13,29 +13,26 @@ require_distro() {
 case "$(pypy_architecture 2>/dev/null || true)" in
 "linux" )
   require_distro "Ubuntu 10.04" || true
-  install_package "pypy-2.0.2" "https://bitbucket.org/pypy/pypy/downloads/pypy-2.0.2-linux.tar.bz2#51ac0aa37a8255acbc71eca23ea29609" "pypy" verify_py27
+  install_package "pypy-2.0.2" "https://bitbucket.org/pypy/pypy/downloads/pypy-2.0.2-linux.tar.bz2#3b43c1ac147f6bb11981dd7f8c5458b95d6bdcf1adceb8043c32ca5e8fcab4da" "pypy" verify_py27 ensurepip
   ;;
 "linux64" )
   require_distro "Ubuntu 12.04" || true
-  install_package "pypy-2.0.2" "https://bitbucket.org/pypy/pypy/downloads/pypy-2.0.2-linux64.tar.bz2#9d9f512ab2f114bfb4f165c71181a511" "pypy" verify_py27
+  install_package "pypy-2.0.2" "https://bitbucket.org/pypy/pypy/downloads/pypy-2.0.2-linux64.tar.bz2#3f9bc07959a2d6058a0c1b84da837e2ec457642fe03ac46123d145c419a7b5cd" "pypy" verify_py27 ensurepip
   ;;
 "osx64" )
-  install_package "pypy-2.0.2" "https://bitbucket.org/pypy/pypy/downloads/pypy-2.0.2-osx64.tar.bz2#a7da45a3161c198de6f662e3c40629ff" "pypy" verify_py27
+  install_package "pypy-2.0.2" "https://bitbucket.org/pypy/pypy/downloads/pypy-2.0.2-osx64.tar.bz2#34f5a7bf22a8bca3b9d79ae3186016c34638669ab19b4af6e38412181c757761" "pypy" verify_py27 ensurepip
   ;;
 "win32" )
   # FIXME: never tested on Windows
-  install_zip "pypy-2.0.2" "https://bitbucket.org/pypy/pypy/downloads/pypy-2.0.2-win32.zip#3e51dce7ecfc8fb069d65d95e8de6fb2" "pypy" verify_py27
+  install_zip "pypy-2.0.2" "https://bitbucket.org/pypy/pypy/downloads/pypy-2.0.2-win32.zip#f3cfa54740076c59e6ef02e1411f62551230df5cd20a247e81b6e589478afe66" "pypy" verify_py27 ensurepip
   ;;
 * )
   { echo
     colorize 1 "ERROR"
-    echo ": The binary distribution of PyPy is not available for $(uname -s)-$(uname -m)."
+    echo ": The binary distribution of PyPy is not available for $(pypy_architecture 2>/dev/null || true)."
     echo "try 'pypy-2.0.2-src' to build from soruce."
     echo
   } >&2
   exit 1
   ;;
 esac
-
-install_package "setuptools-3.1" "https://pypi.python.org/packages/source/s/setuptools/setuptools-3.1.tar.gz#425c2fa9329fc000e8c5ff947df001c3" python
-install_package "pip-1.5.4" "https://pypi.python.org/packages/source/p/pip/pip-1.5.4.tar.gz#834b2904f92d46aaa333267fb1c922bb" python

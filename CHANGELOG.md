@@ -1,5 +1,105 @@
 ## Version History
 
+#### 20141012
+
+* python-build: Add new CPython releases; 3.2.6, 3.3.6 (#253)
+
+#### 20141011
+
+* python-build: Fix build error of Stackless 3.3.5 on OS X (#250)
+* python-build: Add new Stackless releases; stackless-2.7.7, stackless-2.7.8, stackless-3.4.1 (#252)
+
+#### 20141008
+
+* python-build: Add new CPython release; 3.4.2 (#251)
+* python-build: Add new CPython release candidates; 3.2.6rc1, 3.3.6rc1 (#248)
+
+#### 20140924
+
+* pyenv: Fix an unintended behavior when user does not have write permission on $PYENV_ROOT (#230)
+* pyenv: Fix a zsh completion issue (#232)
+* python-build: Add new PyPy release; pypy-2.4.0, pypy-2.4.0-src (#241)
+
+#### 20140825
+
+* pyenv: Fix zsh completion with multiple words (#215)
+* python-build: Display the package name of `hg` as `mercurial` in message (#212)
+* python-build: Unset `PIP_REQUIRE_VENV` during build (#216)
+* python-build: Set MACOSX_DEPLOYMENT_TARGET from the product version of OS X (#219, #220)
+* python-build: Add new Jython release; jython2.7-beta3 (#223)
+
+#### 20140705
+
+* python-build: Add new CPython release; 2.7.8 (#201)
+* python-build: Support `SETUPTOOLS_VERSION` and `PIP_VERSION` to allow installing specific version of setuptools/pip (#202)
+
+#### 20140628
+
+* python-build: Add new Anaconda releases; anaconda-2.0.1, anaconda3-2.0.1 (#195)
+* python-build: Add new PyPy3 release; pypy3-2.3.1 (#198)
+* python-build: Add ancient CPython releases; 2.1.3, 2.2.3, 2.3.7 (#199)
+* python-build: Use `ez_setup.py` and `get-pip.py` instead of installing them from tarballs (#194)
+* python-build: Add support for command-line options to `ez_setup.py` and `get-pip.py` (#200)
+
+#### 20140615
+
+* python-build: Update default setuptools version (4.0.1 -> 5.0) (#190)
+
+#### 20140614
+
+* pyenv: Change versioning schema (`v0.4.0-YYYYMMDD` -> `vYYYYMMDD`)
+* python-build: Add new PyPy release; pypy-2.3.1, pypy-2.3.1-src
+* python-build: Create symlinks for executables with version suffix (#182)
+* python-build: Use SHA2 as default digest algorithm to verify downloaded archives
+* python-build: Update default setuptools version (4.0 -> 4.0.1) (#183)
+* python-build: Import recent changes from ruby-build v20140524 (#184)
+
+#### 0.4.0-20140602
+
+* python-build: Add new Anaconda/Anaconda3 releases; anaconda-2.0.0, anaconda3-2.0.0 (#179)
+* python-build: Add new CPython release; 2.7.7 (#180)
+* python-build: Update default setuptools version (3.6 -> 4.0) (#181)
+* python-build: Respect environment variables of `CPPFLAGS` and `LDFLAGS` (#168)
+* python-build: Support for xz-compressed Python tarballs (#177)
+
+#### 0.4.0-20140520
+
+* python-build: Add new CPython release; 3.4.1 (#170, #171)
+* python-build: Update default pip version (1.5.5 -> 1.5.6) (#169)
+
+#### 0.4.0-20140516
+
+* pyenv: Prefer gawk over awk if both are available.
+* python-build: Add new PyPy release; pypy-2.3, pypy-2.3-src (#162)
+* python-build: Add new Anaconda release; anaconda-1.9.2 (#155)
+* python-build: Add new Miniconda releases; miniconda-3.3.0, minoconda-3.4.2, miniconda3-3.3.0, miniconda3-3.4.2
+* python-build: Add new Stackless releases; stackless-2.7.3, stackless-2.7.4, stackless-2.7.5, stackless-2.7.6, stackless-3.2.5, stackless-3.3.5 (#164)
+* python-build: Add IronPython versions (setuptools and pip will work); ironpython-2.7.4, ironpython-dev
+* python-build: Add new Jython beta release; jython-2.7-beta2
+* python-build: Update default setuptools version (3.4.1 -> 3.6)
+* python-build: Update default pip version (1.5.4 -> 1.5.5)
+* python-build: Update GNU Readline (6.2 -> 6.3)
+* python-build: Import recent changes from ruby-build v20140420
+
+#### 0.4.0-20140404
+
+* pyenv: Reads only the first word from version file. This is as same behavior as rbenv.
+* python-build: Fix build of Tkinter with Tcl/Tk 8.6 (#131)
+* python-build: Fix build problem with Readline 6.3 (#126, #131, #149, #152)
+* python-build: Do not exit with errors even if some of modules are absent (#131)
+* python-build: MacOSX was mispelled as MaxOSX in `anaconda_architecture` (#136)
+* python-build: Use default `cc` as the C Compiler to build CPython (#148, #150)
+* python-build: Display value from `pypy_architecture` and `anaconda_architecture` on errors (yyuu/pyenv-virtualenv#18)
+* python-build: Remove old development version; 2.6-dev
+* python-build: Update default setuptools version (3.3 -> 3.4.1)
+
+#### 0.4.0-20140317
+
+* python-build: Add new CPython releases; 3.4.0 (#133)
+* python-build: Add new Anaconda releases; anaconda-1.9.0, anaconda-1.9.1
+* python-build: Add new Miniconda releases; miniconda-3.0.4, miniconda-3.0.5, miniconda3-3.0.4, miniconda3-3.0.5
+* python-build: Update default setuptools version (3.1 -> 3.3)
+
 #### 0.4.0-20140311
 
 * python-build: Add new CPython releases; 3.3.5 (#127)
