@@ -1,6 +1,6 @@
-/plugins
+/build
+/cache
 /shims
 /version
 /versions
 /sources
-/cache
