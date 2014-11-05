@@ -127,7 +127,7 @@ reading it from the following sources, in this order:
    `PATH`.)
 
 **NOTE:** You can activate multiple versions at the same time, e.g. `pyenv
-global 3.4.1 2.7.8`.  This allows for parallel usage of python2 and python3,
+global 3.4.2 2.7.8`.  This allows for parallel usage of python2 and python3,
 and is required with tools like `tox`.
 
 ### Locating the Python Installation
@@ -141,9 +141,9 @@ Each Python version is installed into its own directory under
 
 For example, you might have these versions installed:
 
-* `~/.pyenv/versions/2.7.6/`
-* `~/.pyenv/versions/3.3.3/`
-* `~/.pyenv/versions/pypy-2.2.1/`
+* `~/.pyenv/versions/2.7.8/`
+* `~/.pyenv/versions/3.4.2/`
+* `~/.pyenv/versions/pypy-2.4.0/`
 
 As far as pyenv is concerned, version names are simply the directories in
 `~/.pyenv/versions`.
@@ -204,9 +204,9 @@ easy to fork and contribute any changes back upstream.
         $ exec $SHELL
 
 5. **Install Python versions into `$PYENV_ROOT/versions`.**
-   For example, to install Python 2.7.6, download and unpack the source, then run:
+   For example, to install Python 2.7.8, download and unpack the source, then run:
 
-        $ pyenv install 2.7.6
+        $ pyenv install 2.7.8
 
    **NOTE:** If you need to pass configure option to build, please use
    ```CONFIGURE_OPTS``` environment variable.
@@ -220,6 +220,10 @@ easy to fork and contribute any changes back upstream.
    (Examples: installing a new Python version, or installing a package that provides a binary.)
 
         $ pyenv rehash
+
+   This can be automated for pip using
+   [pyenv-pip-rehash](https://github.com/yyuu/pyenv-pip-rehash), which invokes
+   `pyenv rehash` after (un)installing packages using pip.
 
 
 #### Upgrading
