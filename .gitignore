@@ -1,3 +1,4 @@
+/plugins
 /shims
 /version
 /versions
@@ -6,4 +7,3 @@
 /libexec/*.dylib
 /src/Makefile
 /src/*.o
-bats/
