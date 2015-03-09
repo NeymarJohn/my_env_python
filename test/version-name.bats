@@ -57,5 +57,9 @@ setup() {
   cat > ".python-version" <<<"python-2.7.6"
   run pyenv-version-name
   assert_success
-  assert_output "2.7.6"
+  assert_output <<OUT
+warning: ignoring extraneous \`python-' prefix in version \`python-2.7.6'
+         (set by ${PWD}/.python-version)
+2.7.6
+OUT
 }

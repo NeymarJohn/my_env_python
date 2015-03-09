@@ -5,13 +5,8 @@ export MAKE=make
 export MAKE_OPTS='-j 2'
 export -n CFLAGS
 export -n CC
-export -n PYTHON_CONFIGURE_OPTS
 
 @test "require_gcc on OS X 10.9" {
-  # yyuu/pyenv#222
-  stub uname '-s : echo Darwin'
-  stub sw_vers '-productVersion : echo 10.9.5'
-
   stub uname '-s : echo Darwin'
   stub sw_vers '-productVersion : echo 10.9.5'
   stub gcc '--version : echo 4.2.1'
@@ -29,10 +24,6 @@ OUT
 }
 
 @test "require_gcc on OS X 10.10" {
-  # yyuu/pyenv#222
-  stub uname '-s : echo Darwin'
-  stub sw_vers '-productVersion : echo 10.10'
-
   stub uname '-s : echo Darwin'
   stub sw_vers '-productVersion : echo 10.10'
   stub gcc '--version : echo 4.2.1'
@@ -45,7 +36,7 @@ DEF
   assert_success
   assert_output <<OUT
 CC=${TMP}/bin/gcc
-MACOSX_DEPLOYMENT_TARGET=10.9
+MACOSX_DEPLOYMENT_TARGET=10.10
 OUT
 }
 
