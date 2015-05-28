@@ -13,7 +13,7 @@ create_command() {
   create_command "rbenv-hello" "#!$BASH
     echo hello"
   run rbenv-completions hello
-  assert_success "--help"
+  assert_success ""
 }
 
 @test "command with completion support" {
@@ -25,11 +25,7 @@ else
   exit 1
 fi"
   run rbenv-completions hello
-  assert_success
-  assert_output <<OUT
---help
-hello
-OUT
+  assert_success "hello"
 }
 
 @test "forwards extra arguments" {
@@ -44,7 +40,6 @@ fi"
   run rbenv-completions hello happy world
   assert_success
   assert_output <<OUT
---help
 happy
 world
 OUT

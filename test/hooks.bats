@@ -59,13 +59,7 @@ OUT
   mkdir -p "$HOME"
   touch "${HOME}/hola.bash"
   ln -s "../../home/hola.bash" "${path}/exec/hello.bash"
-  touch "${path}/exec/bright.sh"
-  ln -s "bright.sh" "${path}/exec/world.bash"
 
   RBENV_HOOK_PATH="$path" run rbenv-hooks exec
-  assert_success
-  assert_output <<OUT
-${HOME}/hola.bash
-${RBENV_TEST_DIR}/rbenv.d/exec/bright.sh
-OUT
+  assert_success "${HOME}/hola.bash"
 }

@@ -8,6 +8,13 @@ if [ -z "$RBENV_VERSION" ]; then
   RBENV_VERSION="$(rbenv-version-file-read "$RBENV_VERSION_FILE" || true)"
 fi
 
+OLDIFS="$IFS"
+IFS=$'\n' scripts=(`rbenv-hooks version-name`)
+IFS="$OLDIFS"
+for script in "${scripts[@]}"; do
+  source "$script"
+done
+
 if [ -z "$RBENV_VERSION" ] || [ "$RBENV_VERSION" = "system" ]; then
   echo "system"
   exit
@@ -23,6 +30,6 @@ if version_exists "$RBENV_VERSION"; then
 elif version_exists "${RBENV_VERSION#ruby-}"; then
   echo "${RBENV_VERSION#ruby-}"
 else
-  echo "rbenv: version \`$RBENV_VERSION' is not installed (set by $(rbenv-version-origin))" >&2
+  echo "rbenv: version \`$RBENV_VERSION' is not installed" >&2
   exit 1
 fi

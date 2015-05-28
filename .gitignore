@@ -7,4 +7,3 @@
 /libexec/*.dylib
 /src/Makefile
 /src/*.o
-/gems

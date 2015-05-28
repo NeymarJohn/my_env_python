@@ -5,17 +5,6 @@
 set -e
 [ -n "$RBENV_DEBUG" ] && set -x
 
-# Provide rbenv completions
-if [ "$1" = "--complete" ]; then
-  echo -
-  echo --no-rehash
-  echo bash
-  echo fish
-  echo ksh
-  echo zsh
-  exit
-fi
-
 print=""
 no_rehash=""
 for args in "$@"
@@ -36,8 +25,7 @@ if [ -z "$shell" ]; then
   shell="$(ps c -p "$PPID" -o 'ucomm=' 2>/dev/null || true)"
   shell="${shell##-}"
   shell="${shell%% *}"
-  shell="${shell:-$SHELL}"
-  shell="${shell##*/}"
+  shell="$(basename "${shell:-$SHELL}")"
 fi
 
 root="${0%/*}/.."
@@ -45,11 +33,7 @@ root="${0%/*}/.."
 if [ -z "$print" ]; then
   case "$shell" in
   bash )
-    if [ -f "${HOME}/.bashrc" ] && [ ! -f "${HOME}/.bash_profile" ]; then
-      profile='~/.bashrc'
-    else
-      profile='~/.bash_profile'
-    fi
+    profile='~/.bash_profile'
     ;;
   zsh )
     profile='~/.zshrc'
@@ -65,7 +49,7 @@ if [ -z "$print" ]; then
     ;;
   esac
 
-  { echo "# Load rbenv automatically by appending"
+  { echo "# Load rbenv automatically by adding"
     echo "# the following to ${profile}:"
     echo
     case "$shell" in
@@ -104,7 +88,7 @@ if [ -r "$completion" ]; then
 fi
 
 if [ -z "$no_rehash" ]; then
-  echo 'command rbenv rehash 2>/dev/null'
+  echo 'rbenv rehash 2>/dev/null'
 fi
 
 commands=(`rbenv-commands --sh`)
@@ -117,7 +101,7 @@ function rbenv
 
   switch "\$command"
   case ${commands[*]}
-    . (rbenv "sh-\$command" \$argv|psub)
+    eval (rbenv "sh-\$command" \$argv)
   case '*'
     command rbenv "\$command" \$argv
   end
@@ -148,7 +132,7 @@ cat <<EOS
 
   case "\$command" in
   ${commands[*]})
-    eval "\$(rbenv "sh-\$command" "\$@")";;
+    eval "\`rbenv "sh-\$command" "\$@"\`";;
   *)
     command rbenv "\$command" "\$@";;
   esac
