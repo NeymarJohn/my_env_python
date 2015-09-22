@@ -1,5 +1,32 @@
 ## Version History
 
+### 20150913
+
+* python-build: Add CPython 3.5.0
+* python-build: Remove CPython 3.5.0 release candidates
+* python-build: Fixed anaconda3 repo's paths (#439)
+* python-build: Add miniconda-3.16.0 and miniconda3-3.16.0 (#435)
+
+### 20150901
+
+* python-build: Add CPython 3.5.0 release candidates; 3.5.0rc1 and 3.5.0rc2
+* python-build: Disabled `_FORTITY_SOURCE` to fix CPython >= 2.4, <= 2.4.3 builds (#422)
+* python-build: Removed CPython 3.5.0 betas
+* python-build: Add miniconda-3.10.1 and miniconda3-3.10.1 (#414)
+* python-build: Add PyPy 2.6.1 (#433)
+* python-build: Add PyPy-STM 2.3 and 2.5.1 (#428)
+* python-build: Ignore user's site-packages on ensurepip/get-pip (#411)
+* pyenv: Import recent changes from ruby-build v20150818
+
+#### 20150719
+
+* python-build: Add CPython `3.6-dev` (#413)
+* python-build: Add Anaconda/Anaconda3 2.3.0
+* python-build: Fix download URL of portable PyPy 2.6 (fixes #389)
+* python-build: Use custom `MACOSX_DEPLOYMENT_TARGET` if defined (#312)
+* python-build: Use original CPython repository instead of mirror at bitbucket.org as the source of `*-dev` versions (#409)
+* python-build: Pin pip version to 1.5.6 for python 3.1.5 (#351)
+
 #### 20150601
 
 * python-build: Add PyPy 2.6.0
