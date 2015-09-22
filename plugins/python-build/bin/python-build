@@ -12,7 +12,7 @@
 #   -g/--debug       Build a debug version
 #
 
-PYTHON_BUILD_VERSION="20150818"
+PYTHON_BUILD_VERSION="20150519"
 
 set -E
 exec 3<&2 # preserve original stderr at fd 3
@@ -890,18 +890,10 @@ pypy_architecture() {
 build_package_pypy() {
   build_package_copy
   mkdir -p "${PREFIX_PATH}/bin" "${PREFIX_PATH}/lib"
-  local pypy libpypy python
+  local pypy libpypy
   shopt -s nullglob
   for pypy in "bin/pypy"*; do
-    case "${pypy##*/}" in
-    "pypy-stm" )
-      python="bin/python"
-      ;;
-    * )
-      python="$(basename "${pypy}" | sed -e 's/pypy/python/')"
-      ;;
-    esac
-    ( cd "${PREFIX_PATH}/bin" && ln -fs "${pypy##*/}" "${python##*/}" )
+    ( cd "${PREFIX_PATH}/bin" && ln -fs "$(basename "${pypy}")" "$(basename "${pypy}" | sed -e 's/pypy/python/')" )
   done
   for libpypy in "bin/libpypy-c."*; do
     ( cd "${PREFIX_PATH}/lib" && ln -fs "../bin/$(basename "${libpypy}")" "$(basename "${libpypy}")" )
@@ -1132,13 +1124,12 @@ require_llvm() {
   local llvm_version="$1"
   if [ "$(uname -s)" = "Darwin" ] && [ "$(osx_version)" -ge 1010 ]; then
     if [[ "$PYTHON_CONFIGURE_OPTS" != *--llvm-* ]]; then
-      case "$llvm_version" in
-      3.2 )
+      if [ "$llvm_version" = "3.2" ]; then
         package_option python configure --prebuilt-name="llvm-3.2-x86_64-apple-darwin13.tar.bz2"
-        ;;
-      3.5 )
-        local llvm_config="$(locate_llvm "$llvm_version")"
-        if [ -n "$llvm_config" ]; then
+      else
+        local llvm_prefix="$(brew --prefix llvm 2>/dev/null || true)"
+        local llvm_config="${llvm_prefix}/bin/llvm-config"
+        if [ -x "$llvm_config" ]; then
           package_option python configure --llvm-config="$llvm_config"
         else
           { echo
@@ -1149,29 +1140,14 @@ require_llvm() {
             colorize 1 "TO FIX THE PROBLEM"
             echo ": Install Homebrew's llvm package with this"
             echo -n "command: "
-            colorize 4 "brew tap homebrew/versions ; brew install llvm35"
+            colorize 4 "brew install llvm"
             echo
           } >&3
           return 1
         fi
-        ;;
-      esac
+      fi
     fi
   fi
-}
-
-locate_llvm() {
-  local llvm_version="$1"
-  local package llvm_config
-  shopt -s nullglob
-  for package in `brew list 2>/dev/null | grep "^llvm"`; do
-    llvm_config="$(echo "$(brew --prefix "$package")/bin/llvm-config"*)"
-    if [ -n "$llvm_config" ] && [[ "$("$llvm_config" --version)" = "$llvm_version"* ]]; then
-      echo "$llvm_config"
-      break
-    fi
-  done
-  shopt -u nullglob
 }
 
 require_java() {
@@ -1258,6 +1234,7 @@ use_homebrew_readline() {
 has_broken_mac_openssl() {
   [ "$(uname -s)" = "Darwin" ] &&
   [[ "$(/usr/bin/openssl version 2>/dev/null || true)" = "OpenSSL 0.9.8"?* ]] &&
+  [[ "$RUBY_CONFIGURE_OPTS" != *--with-openssl-dir=* ]] &&
   ! use_homebrew_openssl
 }
 
@@ -1540,11 +1517,6 @@ build_package_verify_py35() {
   build_package_verify_py34 "$1" "${2:-3.5}"
 }
 
-# Post-install check for Python 3.6.x
-build_package_verify_py36() {
-  build_package_verify_py35 "$1" "${2:-3.6}"
-}
-
 build_package_ez_setup() {
   local ez_setup="${BUILD_PATH}/ez_setup.py"
   rm -f "${ez_setup}"
@@ -1575,7 +1547,7 @@ build_package_get_pip() {
       http get "${GET_PIP_URL}"
     fi
   } 1> "${get_pip}"
-  "${PYTHON_BIN}" -s "${get_pip}" ${GET_PIP_OPTS} 1>&4 2>&1 || {
+  "${PYTHON_BIN}" "${get_pip}" ${GET_PIP_OPTS} 1>&4 2>&1 || {
     echo "error: failed to install pip via get-pip.py" >&2
     return 1
   }
@@ -1588,7 +1560,7 @@ build_package_ensurepip() {
     ensurepip_opts="--altinstall"
   fi
   # FIXME: `--altinstall` with `get-pip.py`
-  "$PYTHON_BIN" -s -m ensurepip ${ensurepip_opts} 1>/dev/null 2>&1 || build_package_get_pip "$@" || return 1
+  "$PYTHON_BIN" -m ensurepip ${ensurepip_opts} 1>/dev/null 2>&1 || build_package_get_pip "$@" || return 1
 }
 
 version() {
