@@ -1,7 +1,5 @@
 # Simple Python Version Management: pyenv
 
-[![Join the chat at https://gitter.im/yyuu/pyenv](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/yyuu/pyenv?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 [![Build Status](https://travis-ci.org/yyuu/pyenv.svg)](https://travis-ci.org/yyuu/pyenv)
 
 pyenv lets you easily switch between multiple versions of Python. It's
@@ -11,7 +9,7 @@ tools that do one thing well.
 This project was forked from [rbenv](https://github.com/sstephenson/rbenv) and
 [ruby-build](https://github.com/sstephenson/ruby-build), and modified for Python.
 
-<img src="https://i.gyazo.com/699a58927b77e46e71cd674c7fc7a78d.png" width="735" height="490" />
+<img src="http://gyazo.com/9c829fafdf5e58880c820349c4e9197e.png?1346414267" width="849" height="454" />
 
 
 ### pyenv _does..._
