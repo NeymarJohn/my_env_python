@@ -1,38 +1,41 @@
-unset PYENV_VERSION
-unset PYENV_DIR
+unset RBENV_VERSION
+unset RBENV_DIR
 
-if enable -f "${BATS_TEST_DIRNAME}"/../libexec/pyenv-realpath.dylib realpath 2>/dev/null; then
-  PYENV_TEST_DIR="$(realpath "$BATS_TMPDIR")/pyenv"
+if enable -f "${BATS_TEST_DIRNAME}"/../libexec/rbenv-realpath.dylib realpath 2>/dev/null; then
+  RBENV_TEST_DIR="$(realpath "$BATS_TMPDIR")/rbenv"
 else
-  if [ -n "$PYENV_NATIVE_EXT" ]; then
-    echo "pyenv: failed to load \`realpath' builtin" >&2
+  if [ -n "$RBENV_NATIVE_EXT" ]; then
+    echo "rbenv: failed to load \`realpath' builtin" >&2
     exit 1
   fi
-  PYENV_TEST_DIR="${BATS_TMPDIR}/pyenv"
+  RBENV_TEST_DIR="${BATS_TMPDIR}/rbenv"
 fi
 
 # guard against executing this block twice due to bats internals
-if [ "$PYENV_ROOT" != "${PYENV_TEST_DIR}/root" ]; then
-  export PYENV_ROOT="${PYENV_TEST_DIR}/root"
-  export HOME="${PYENV_TEST_DIR}/home"
+if [ "$RBENV_ROOT" != "${RBENV_TEST_DIR}/root" ]; then
+  export RBENV_ROOT="${RBENV_TEST_DIR}/root"
+  export HOME="${RBENV_TEST_DIR}/home"
 
   PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-  PATH="${PYENV_TEST_DIR}/bin:$PATH"
+  PATH="${RBENV_TEST_DIR}/bin:$PATH"
   PATH="${BATS_TEST_DIRNAME}/../libexec:$PATH"
   PATH="${BATS_TEST_DIRNAME}/libexec:$PATH"
-  PATH="${PYENV_ROOT}/shims:$PATH"
+  PATH="${RBENV_ROOT}/shims:$PATH"
   export PATH
+
+  for xdg_var in `env 2>/dev/null | grep ^XDG_ | cut -d= -f1`; do unset "$xdg_var"; done
+  unset xdg_var
 fi
 
 teardown() {
-  rm -rf "$PYENV_TEST_DIR"
+  rm -rf "$RBENV_TEST_DIR"
 }
 
 flunk() {
   { if [ "$#" -eq 0 ]; then cat -
     else echo "$@"
     fi
-  } | sed "s:${PYENV_TEST_DIR}:TEST_DIR:g" >&2
+  } | sed "s:${RBENV_TEST_DIR}:TEST_DIR:g" >&2
   return 1
 }
 
@@ -103,15 +106,15 @@ assert() {
 }
 
 # Output a modified PATH that ensures that the given executable is not present,
-# but in which system utils necessary for pyenv operation are still available.
+# but in which system utils necessary for rbenv operation are still available.
 path_without() {
   local exe="$1"
   local path="${PATH}:"
   local found alt util
   for found in $(which -a "$exe"); do
     found="${found%/*}"
-    if [ "$found" != "${PYENV_ROOT}/shims" ]; then
-      alt="${PYENV_TEST_DIR}/$(echo "${found#/}" | tr '/' '-')"
+    if [ "$found" != "${RBENV_ROOT}/shims" ]; then
+      alt="${RBENV_TEST_DIR}/$(echo "${found#/}" | tr '/' '-')"
       mkdir -p "$alt"
       for util in bash head cut readlink greadlink; do
         if [ -x "${found}/$util" ]; then
