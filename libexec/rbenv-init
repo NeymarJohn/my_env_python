@@ -34,11 +34,7 @@ root="${0%/*}/.."
 if [ -z "$print" ]; then
   case "$shell" in
   bash )
-    if [ -f "${HOME}/.bashrc" ] && [ ! -f "${HOME}/.bash_profile" ]; then
-      profile='~/.bashrc'
-    else
-      profile='~/.bash_profile'
-    fi
+    profile='~/.bash_profile'
     ;;
   zsh )
     profile='~/.zshrc'
