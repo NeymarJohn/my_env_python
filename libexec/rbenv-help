@@ -18,7 +18,8 @@ set -e
 # Provide rbenv completions
 if [ "$1" = "--complete" ]; then
   echo --usage
-  exec rbenv-commands
+  rbenv-commands
+  exit
 fi
 
 command_path() {
