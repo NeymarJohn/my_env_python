@@ -12,6 +12,12 @@ create_file() {
   touch "$1"
 }
 
+@test "detects global 'version' file" {
+  create_file "${RBENV_ROOT}/version"
+  run rbenv-version-file
+  assert_success "${RBENV_ROOT}/version"
+}
+
 @test "prints global file if no version files exist" {
   assert [ ! -e "${RBENV_ROOT}/version" ]
   assert [ ! -e ".ruby-version" ]
@@ -19,28 +25,21 @@ create_file() {
   assert_success "${RBENV_ROOT}/version"
 }
 
-@test "detects 'global' file" {
-  create_file "${RBENV_ROOT}/global"
-  run rbenv-version-file
-  assert_success "${RBENV_ROOT}/global"
-}
-
-@test "detects 'default' file" {
-  create_file "${RBENV_ROOT}/default"
-  run rbenv-version-file
-  assert_success "${RBENV_ROOT}/default"
-}
-
-@test "'version' has precedence over 'global' and 'default'" {
-  create_file "${RBENV_ROOT}/version"
-  create_file "${RBENV_ROOT}/global"
-  create_file "${RBENV_ROOT}/default"
-  run rbenv-version-file
-  assert_success "${RBENV_ROOT}/version"
-}
-
 @test "in current directory" {
   create_file ".ruby-version"
+  run rbenv-version-file
+  assert_success "${RBENV_TEST_DIR}/.ruby-version"
+}
+
+@test "legacy file in current directory" {
+  create_file ".rbenv-version"
+  run rbenv-version-file
+  assert_success "${RBENV_TEST_DIR}/.rbenv-version"
+}
+
+@test ".ruby-version has precedence over legacy file" {
+  create_file ".ruby-version"
+  create_file ".rbenv-version"
   run rbenv-version-file
   assert_success "${RBENV_TEST_DIR}/.ruby-version"
 }
@@ -59,6 +58,14 @@ create_file() {
   cd project
   run rbenv-version-file
   assert_success "${RBENV_TEST_DIR}/project/.ruby-version"
+}
+
+@test "legacy file has precedence if higher" {
+  create_file ".ruby-version"
+  create_file "project/.rbenv-version"
+  cd project
+  run rbenv-version-file
+  assert_success "${RBENV_TEST_DIR}/project/.rbenv-version"
 }
 
 @test "RBENV_DIR has precedence over PWD" {
