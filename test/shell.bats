@@ -3,101 +3,50 @@
 load test_helper
 
 @test "no shell version" {
-  mkdir -p "${RBENV_TEST_DIR}/myproject"
-  cd "${RBENV_TEST_DIR}/myproject"
-  echo "1.2.3" > .ruby-version
-  RBENV_VERSION="" run rbenv-sh-shell
-  assert_failure "rbenv: no shell-specific version configured"
+  mkdir -p "${PYENV_TEST_DIR}/myproject"
+  cd "${PYENV_TEST_DIR}/myproject"
+  echo "1.2.3" > .python-version
+  PYENV_VERSION="" run pyenv-sh-shell
+  assert_failure "pyenv: no shell-specific version configured"
 }
 
 @test "shell version" {
-  RBENV_SHELL=bash RBENV_VERSION="1.2.3" run rbenv-sh-shell
-  assert_success 'echo "$RBENV_VERSION"'
+  PYENV_SHELL=bash PYENV_VERSION="1.2.3" run pyenv-sh-shell
+  assert_success 'echo "$PYENV_VERSION"'
 }
 
 @test "shell version (fish)" {
-  RBENV_SHELL=fish RBENV_VERSION="1.2.3" run rbenv-sh-shell
-  assert_success 'echo "$RBENV_VERSION"'
+  PYENV_SHELL=fish PYENV_VERSION="1.2.3" run pyenv-sh-shell
+  assert_success 'echo "$PYENV_VERSION"'
 }
 
 @test "shell unset" {
-  RBENV_SHELL=bash run rbenv-sh-shell --unset
-  assert_output <<OUT
-unset OLD_RBENV_VERSION
-unset RBENV_VERSION
-OUT
+  PYENV_SHELL=bash run pyenv-sh-shell --unset
+  assert_success "unset PYENV_VERSION"
 }
 
 @test "shell unset (fish)" {
-  RBENV_SHELL=fish run rbenv-sh-shell --unset
-  assert_output <<OUT
-set -e OLD_RBENV_VERSION
-set -e RBENV_VERSION
-OUT
+  PYENV_SHELL=fish run pyenv-sh-shell --unset
+  assert_success "set -e PYENV_VERSION"
 }
 
 @test "shell change invalid version" {
-  run rbenv-sh-shell 1.2.3
+  run pyenv-sh-shell 1.2.3
   assert_failure
   assert_output <<SH
-rbenv: version \`1.2.3' not installed
+pyenv: version \`1.2.3' not installed
 false
 SH
 }
 
 @test "shell change version" {
-  mkdir -p "${RBENV_ROOT}/versions/1.2.3"
-  RBENV_SHELL=bash run rbenv-sh-shell 1.2.3
-  assert_output <<OUT
-export OLD_RBENV_VERSION=""
-export RBENV_VERSION="1.2.3"
-OUT
-}
-
-@test "shell change version pushes away previous OLD_RBENV_VERSION" {
-  mkdir -p "${RBENV_ROOT}/versions/1.2.3"
-  mkdir -p "${RBENV_ROOT}/versions/1.2.4"
-  mkdir -p "${RBENV_ROOT}/versions/1.2.5"
-  export OLD_RBENV_VERSION="1.2.3"
-  export RBENV_VERSION="1.2.4"
-  RBENV_SHELL=bash run rbenv-sh-shell 1.2.5
-  assert_output <<OUT
-export OLD_RBENV_VERSION="1.2.4"
-export RBENV_VERSION="1.2.5"
-OUT
-}
-
-@test "shell change version to the same version does not lose OLD_RBENV_VERSION" {
-  mkdir -p "${RBENV_ROOT}/versions/1.2.3"
-  mkdir -p "${RBENV_ROOT}/versions/1.2.4"
-  export OLD_RBENV_VERSION="1.2.3"
-  export RBENV_VERSION="1.2.4"
-  RBENV_SHELL=bash run rbenv-sh-shell 1.2.4
-  assert_output ''
-}
-
-@test "shell change version to - swaps old and new versions" {
-  mkdir -p "${RBENV_ROOT}/versions/1.2.3"
-  mkdir -p "${RBENV_ROOT}/versions/1.2.4"
-  export OLD_RBENV_VERSION="1.2.3"
-  export RBENV_VERSION="1.2.4"
-  RBENV_SHELL=bash run rbenv-sh-shell -
-  assert_output <<OUT
-export OLD_RBENV_VERSION="1.2.4"
-export RBENV_VERSION="1.2.3"
-OUT
-}
-
-@test "shell change version to - with no previous is an error" {
-  mkdir -p "${RBENV_ROOT}/versions/1.2.3"
-  RBENV_SHELL=bash run rbenv-sh-shell -
-  assert_failure <<OUT
-rbenv: OLD_RBENV_VERSION not set
-OUT
+  mkdir -p "${PYENV_ROOT}/versions/1.2.3"
+  PYENV_SHELL=bash run pyenv-sh-shell 1.2.3
+  assert_success 'export PYENV_VERSION="1.2.3"'
 }
 
 @test "shell change version (fish)" {
-  mkdir -p "${RBENV_ROOT}/versions/1.2.3"
-  RBENV_SHELL=fish run rbenv-sh-shell 1.2.3
-  assert_success 'setenv RBENV_VERSION "1.2.3"'
+  mkdir -p "${PYENV_ROOT}/versions/1.2.3"
+  PYENV_SHELL=fish run pyenv-sh-shell 1.2.3
+  assert_success 'setenv PYENV_VERSION "1.2.3"'
 }
