@@ -22,50 +22,29 @@ setup() {
   assert_success "system"
 }
 
-@test "PYENV_VERSION can be overridden by hook" {
-  create_version "2.7.11"
-  create_version "3.5.1"
-  create_hook version-name test.bash <<<"PYENV_VERSION=3.5.1"
-
-  PYENV_VERSION=2.7.11 run pyenv-version-name
-  assert_success "3.5.1"
-}
-
-@test "carries original IFS within hooks" {
-  create_hook version-name hello.bash <<SH
-hellos=(\$(printf "hello\\tugly world\\nagain"))
-echo HELLO="\$(printf ":%s" "\${hellos[@]}")"
-SH
-
-  export PYENV_VERSION=system
-  IFS=$' \t\n' run pyenv-version-name env
-  assert_success
-  assert_line "HELLO=:hello:ugly:world:again"
-}
-
 @test "PYENV_VERSION has precedence over local" {
-  create_version "2.7.11"
-  create_version "3.5.1"
+  create_version "2.7.6"
+  create_version "3.3.3"
 
-  cat > ".python-version" <<<"2.7.11"
+  cat > ".python-version" <<<"2.7.6"
   run pyenv-version-name
-  assert_success "2.7.11"
+  assert_success "2.7.6"
 
-  PYENV_VERSION=3.5.1 run pyenv-version-name
-  assert_success "3.5.1"
+  PYENV_VERSION=3.3.3 run pyenv-version-name
+  assert_success "3.3.3"
 }
 
 @test "local file has precedence over global" {
-  create_version "2.7.11"
-  create_version "3.5.1"
+  create_version "2.7.6"
+  create_version "3.3.3"
 
-  cat > "${PYENV_ROOT}/version" <<<"2.7.11"
+  cat > "${PYENV_ROOT}/version" <<<"2.7.6"
   run pyenv-version-name
-  assert_success "2.7.11"
+  assert_success "2.7.6"
 
-  cat > ".python-version" <<<"3.5.1"
+  cat > ".python-version" <<<"3.3.3"
   run pyenv-version-name
-  assert_success "3.5.1"
+  assert_success "3.3.3"
 }
 
 @test "missing version" {
@@ -74,22 +53,22 @@ SH
 }
 
 @test "one missing version (second missing)" {
-  create_version "3.5.1"
-  PYENV_VERSION="3.5.1:1.2" run pyenv-version-name
+  create_version "3.4.2"
+  PYENV_VERSION="3.4.2:1.2" run pyenv-version-name
   assert_failure
   assert_output <<OUT
 pyenv: version \`1.2' is not installed (set by PYENV_VERSION environment variable)
-3.5.1
+3.4.2
 OUT
 }
 
 @test "one missing version (first missing)" {
-  create_version "3.5.1"
-  PYENV_VERSION="1.2:3.5.1" run pyenv-version-name
+  create_version "3.4.2"
+  PYENV_VERSION="1.2:3.4.2" run pyenv-version-name
   assert_failure
   assert_output <<OUT
 pyenv: version \`1.2' is not installed (set by PYENV_VERSION environment variable)
-3.5.1
+3.4.2
 OUT
 }
 
@@ -98,18 +77,18 @@ pyenv-version-name-without-stderr() {
 }
 
 @test "one missing version (without stderr)" {
-  create_version "3.5.1"
-  PYENV_VERSION="1.2:3.5.1" run pyenv-version-name-without-stderr
+  create_version "3.4.2"
+  PYENV_VERSION="1.2:3.4.2" run pyenv-version-name-without-stderr
   assert_failure
   assert_output <<OUT
-3.5.1
+3.4.2
 OUT
 }
 
 @test "version with prefix in name" {
-  create_version "2.7.11"
-  cat > ".python-version" <<<"python-2.7.11"
+  create_version "2.7.6"
+  cat > ".python-version" <<<"python-2.7.6"
   run pyenv-version-name
   assert_success
-  assert_output "2.7.11"
+  assert_output "2.7.6"
 }

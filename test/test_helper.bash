@@ -17,7 +17,6 @@ if [ -z "$PYENV_TEST_DIR" ]; then
 
   export PYENV_ROOT="${PYENV_TEST_DIR}/root"
   export HOME="${PYENV_TEST_DIR}/home"
-  export PYENV_HOOK_PATH="${PYENV_ROOT}/pyenv.d"
 
   PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
   PATH="${PYENV_TEST_DIR}/bin:$PATH"
@@ -129,12 +128,4 @@ path_without() {
   done
   path="${path#:}"
   echo "${path%:}"
-}
-
-create_hook() {
-  mkdir -p "${PYENV_HOOK_PATH}/$1"
-  touch "${PYENV_HOOK_PATH}/$1/$2"
-  if [ ! -t 0 ]; then
-    cat > "${PYENV_HOOK_PATH}/$1/$2"
-  fi
 }

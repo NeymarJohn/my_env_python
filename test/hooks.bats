@@ -2,6 +2,11 @@
 
 load test_helper
 
+create_hook() {
+  mkdir -p "$1/$2"
+  touch "$1/$2/$3"
+}
+
 @test "prints usage help given no argument" {
   run pyenv-hooks
   assert_failure "Usage: pyenv hooks <command>"
@@ -10,13 +15,11 @@ load test_helper
 @test "prints list of hooks" {
   path1="${PYENV_TEST_DIR}/pyenv.d"
   path2="${PYENV_TEST_DIR}/etc/pyenv_hooks"
-  PYENV_HOOK_PATH="$path1"
-  create_hook exec "hello.bash"
-  create_hook exec "ahoy.bash"
-  create_hook exec "invalid.sh"
-  create_hook which "boom.bash"
-  PYENV_HOOK_PATH="$path2"
-  create_hook exec "bueno.bash"
+  create_hook "$path1" exec "hello.bash"
+  create_hook "$path1" exec "ahoy.bash"
+  create_hook "$path1" exec "invalid.sh"
+  create_hook "$path1" which "boom.bash"
+  create_hook "$path2" exec "bueno.bash"
 
   PYENV_HOOK_PATH="$path1:$path2" run pyenv-hooks exec
   assert_success
@@ -30,10 +33,8 @@ OUT
 @test "supports hook paths with spaces" {
   path1="${PYENV_TEST_DIR}/my hooks/pyenv.d"
   path2="${PYENV_TEST_DIR}/etc/pyenv hooks"
-  PYENV_HOOK_PATH="$path1"
-  create_hook exec "hello.bash"
-  PYENV_HOOK_PATH="$path2"
-  create_hook exec "ahoy.bash"
+  create_hook "$path1" exec "hello.bash"
+  create_hook "$path2" exec "ahoy.bash"
 
   PYENV_HOOK_PATH="$path1:$path2" run pyenv-hooks exec
   assert_success
@@ -44,8 +45,8 @@ OUT
 }
 
 @test "resolves relative paths" {
-  PYENV_HOOK_PATH="${PYENV_TEST_DIR}/pyenv.d"
-  create_hook exec "hello.bash"
+  path="${PYENV_TEST_DIR}/pyenv.d"
+  create_hook "$path" exec "hello.bash"
   mkdir -p "$HOME"
 
   PYENV_HOOK_PATH="${HOME}/../pyenv.d" run pyenv-hooks exec
