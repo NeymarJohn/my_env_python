@@ -3,28 +3,28 @@
 load test_helper
 
 setup() {
-  mkdir -p "$PYENV_TEST_DIR"
-  cd "$PYENV_TEST_DIR"
+  mkdir -p "$RBENV_TEST_DIR"
+  cd "$RBENV_TEST_DIR"
 }
 
 @test "invocation without 2 arguments prints usage" {
-  run pyenv-version-file-write
-  assert_failure "Usage: pyenv version-file-write <file> <version>"
-  run pyenv-version-file-write "one" ""
+  run rbenv-version-file-write
+  assert_failure "Usage: rbenv version-file-write <file> <version>"
+  run rbenv-version-file-write "one" ""
   assert_failure
 }
 
 @test "setting nonexistent version fails" {
-  assert [ ! -e ".python-version" ]
-  run pyenv-version-file-write ".python-version" "2.7.6"
-  assert_failure "pyenv: version \`2.7.6' not installed"
-  assert [ ! -e ".python-version" ]
+  assert [ ! -e ".ruby-version" ]
+  run rbenv-version-file-write ".ruby-version" "1.8.7"
+  assert_failure "rbenv: version \`1.8.7' not installed"
+  assert [ ! -e ".ruby-version" ]
 }
 
 @test "writes value to arbitrary file" {
-  mkdir -p "${PYENV_ROOT}/versions/2.7.6"
+  mkdir -p "${RBENV_ROOT}/versions/1.8.7"
   assert [ ! -e "my-version" ]
-  run pyenv-version-file-write "${PWD}/my-version" "2.7.6"
+  run rbenv-version-file-write "${PWD}/my-version" "1.8.7"
   assert_success ""
-  assert [ "$(cat my-version)" = "2.7.6" ]
+  assert [ "$(cat my-version)" = "1.8.7" ]
 }
