@@ -5,7 +5,7 @@ load test_helper
 create_executable() {
   local bin
   if [[ $1 == */* ]]; then bin="$1"
-  else bin="${RBENV_ROOT}/versions/${1}/bin"
+  else bin="${PYENV_ROOT}/versions/${1}/bin"
   fi
   mkdir -p "$bin"
   touch "${bin}/$2"
@@ -13,90 +13,102 @@ create_executable() {
 }
 
 @test "outputs path to executable" {
-  create_executable "1.8" "ruby"
-  create_executable "2.0" "rspec"
+  create_executable "2.7" "python"
+  create_executable "3.4" "py.test"
 
-  RBENV_VERSION=1.8 run rbenv-which ruby
-  assert_success "${RBENV_ROOT}/versions/1.8/bin/ruby"
+  PYENV_VERSION=2.7 run pyenv-which python
+  assert_success "${PYENV_ROOT}/versions/2.7/bin/python"
 
-  RBENV_VERSION=2.0 run rbenv-which rspec
-  assert_success "${RBENV_ROOT}/versions/2.0/bin/rspec"
+  PYENV_VERSION=3.4 run pyenv-which py.test
+  assert_success "${PYENV_ROOT}/versions/3.4/bin/py.test"
+
+  PYENV_VERSION=3.4:2.7 run pyenv-which py.test
+  assert_success "${PYENV_ROOT}/versions/3.4/bin/py.test"
 }
 
 @test "searches PATH for system version" {
-  create_executable "${RBENV_TEST_DIR}/bin" "kill-all-humans"
-  create_executable "${RBENV_ROOT}/shims" "kill-all-humans"
+  create_executable "${PYENV_TEST_DIR}/bin" "kill-all-humans"
+  create_executable "${PYENV_ROOT}/shims" "kill-all-humans"
 
-  RBENV_VERSION=system run rbenv-which kill-all-humans
-  assert_success "${RBENV_TEST_DIR}/bin/kill-all-humans"
+  PYENV_VERSION=system run pyenv-which kill-all-humans
+  assert_success "${PYENV_TEST_DIR}/bin/kill-all-humans"
 }
 
 @test "searches PATH for system version (shims prepended)" {
-  create_executable "${RBENV_TEST_DIR}/bin" "kill-all-humans"
-  create_executable "${RBENV_ROOT}/shims" "kill-all-humans"
+  create_executable "${PYENV_TEST_DIR}/bin" "kill-all-humans"
+  create_executable "${PYENV_ROOT}/shims" "kill-all-humans"
 
-  PATH="${RBENV_ROOT}/shims:$PATH" RBENV_VERSION=system run rbenv-which kill-all-humans
-  assert_success "${RBENV_TEST_DIR}/bin/kill-all-humans"
+  PATH="${PYENV_ROOT}/shims:$PATH" PYENV_VERSION=system run pyenv-which kill-all-humans
+  assert_success "${PYENV_TEST_DIR}/bin/kill-all-humans"
 }
 
 @test "searches PATH for system version (shims appended)" {
-  create_executable "${RBENV_TEST_DIR}/bin" "kill-all-humans"
-  create_executable "${RBENV_ROOT}/shims" "kill-all-humans"
+  create_executable "${PYENV_TEST_DIR}/bin" "kill-all-humans"
+  create_executable "${PYENV_ROOT}/shims" "kill-all-humans"
 
-  PATH="$PATH:${RBENV_ROOT}/shims" RBENV_VERSION=system run rbenv-which kill-all-humans
-  assert_success "${RBENV_TEST_DIR}/bin/kill-all-humans"
+  PATH="$PATH:${PYENV_ROOT}/shims" PYENV_VERSION=system run pyenv-which kill-all-humans
+  assert_success "${PYENV_TEST_DIR}/bin/kill-all-humans"
 }
 
 @test "searches PATH for system version (shims spread)" {
-  create_executable "${RBENV_TEST_DIR}/bin" "kill-all-humans"
-  create_executable "${RBENV_ROOT}/shims" "kill-all-humans"
+  create_executable "${PYENV_TEST_DIR}/bin" "kill-all-humans"
+  create_executable "${PYENV_ROOT}/shims" "kill-all-humans"
 
-  PATH="${RBENV_ROOT}/shims:${RBENV_ROOT}/shims:/tmp/non-existent:$PATH:${RBENV_ROOT}/shims" \
-    RBENV_VERSION=system run rbenv-which kill-all-humans
-  assert_success "${RBENV_TEST_DIR}/bin/kill-all-humans"
+  PATH="${PYENV_ROOT}/shims:${PYENV_ROOT}/shims:/tmp/non-existent:$PATH:${PYENV_ROOT}/shims" \
+    PYENV_VERSION=system run pyenv-which kill-all-humans
+  assert_success "${PYENV_TEST_DIR}/bin/kill-all-humans"
 }
 
 @test "doesn't include current directory in PATH search" {
   export PATH="$(path_without "kill-all-humans")"
-  mkdir -p "$RBENV_TEST_DIR"
-  cd "$RBENV_TEST_DIR"
+  mkdir -p "$PYENV_TEST_DIR"
+  cd "$PYENV_TEST_DIR"
   touch kill-all-humans
   chmod +x kill-all-humans
-  RBENV_VERSION=system run rbenv-which kill-all-humans
-  assert_failure "rbenv: kill-all-humans: command not found"
+  PYENV_VERSION=system run pyenv-which kill-all-humans
+  assert_failure "pyenv: kill-all-humans: command not found"
 }
 
 @test "version not installed" {
-  create_executable "2.0" "rspec"
-  RBENV_VERSION=1.9 run rbenv-which rspec
-  assert_failure "rbenv: version \`1.9' is not installed (set by RBENV_VERSION environment variable)"
+  create_executable "3.4" "py.test"
+  PYENV_VERSION=3.3 run pyenv-which py.test
+  assert_failure "pyenv: version \`3.3' is not installed (set by PYENV_VERSION environment variable)"
+}
+
+@test "versions not installed" {
+  create_executable "3.4" "py.test"
+  PYENV_VERSION=2.7:3.3 run pyenv-which py.test
+  assert_failure <<OUT
+pyenv: version \`2.7' is not installed (set by PYENV_VERSION environment variable)
+pyenv: version \`3.3' is not installed (set by PYENV_VERSION environment variable)
+OUT
 }
 
 @test "no executable found" {
-  create_executable "1.8" "rspec"
-  RBENV_VERSION=1.8 run rbenv-which rake
-  assert_failure "rbenv: rake: command not found"
+  create_executable "2.7" "py.test"
+  PYENV_VERSION=2.7 run pyenv-which fab
+  assert_failure "pyenv: fab: command not found"
 }
 
 @test "no executable found for system version" {
-  export PATH="$(path_without "rake")"
-  RBENV_VERSION=system run rbenv-which rake
-  assert_failure "rbenv: rake: command not found"
+  export PATH="$(path_without "py.test")"
+  PYENV_VERSION=system run pyenv-which py.test
+  assert_failure "pyenv: py.test: command not found"
 }
 
 @test "executable found in other versions" {
-  create_executable "1.8" "ruby"
-  create_executable "1.9" "rspec"
-  create_executable "2.0" "rspec"
+  create_executable "2.7" "python"
+  create_executable "3.3" "py.test"
+  create_executable "3.4" "py.test"
 
-  RBENV_VERSION=1.8 run rbenv-which rspec
+  PYENV_VERSION=2.7 run pyenv-which py.test
   assert_failure
   assert_output <<OUT
-rbenv: rspec: command not found
+pyenv: py.test: command not found
 
-The \`rspec' command exists in these Ruby versions:
-  1.9
-  2.0
+The \`py.test' command exists in these Python versions:
+  3.3
+  3.4
 OUT
 }
 
@@ -107,19 +119,19 @@ echo HELLO="\$(printf ":%s" "\${hellos[@]}")"
 exit
 SH
 
-  IFS=$' \t\n' RBENV_VERSION=system run rbenv-which anything
+  IFS=$' \t\n' PYENV_VERSION=system run pyenv-which anything
   assert_success
   assert_output "HELLO=:hello:ugly:world:again"
 }
 
-@test "discovers version from rbenv-version-name" {
-  mkdir -p "$RBENV_ROOT"
-  cat > "${RBENV_ROOT}/version" <<<"1.8"
-  create_executable "1.8" "ruby"
+@test "discovers version from pyenv-version-name" {
+  mkdir -p "$PYENV_ROOT"
+  cat > "${PYENV_ROOT}/version" <<<"3.4"
+  create_executable "3.4" "python"
 
-  mkdir -p "$RBENV_TEST_DIR"
-  cd "$RBENV_TEST_DIR"
+  mkdir -p "$PYENV_TEST_DIR"
+  cd "$PYENV_TEST_DIR"
 
-  RBENV_VERSION= run rbenv-which ruby
-  assert_success "${RBENV_ROOT}/versions/1.8/bin/ruby"
+  PYENV_VERSION= run pyenv-which python
+  assert_success "${PYENV_ROOT}/versions/3.4/bin/python"
 }
