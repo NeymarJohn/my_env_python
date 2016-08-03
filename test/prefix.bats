@@ -24,17 +24,6 @@ load test_helper
   assert_success "$PYENV_TEST_DIR"
 }
 
-@test "prefix for system in /" {
-  mkdir -p "${BATS_TEST_DIRNAME}/libexec"
-  { echo "#!/bin/sh"
-    echo "echo /bin/python"
-  } >"${BATS_TEST_DIRNAME}/libexec/pyenv-which"
-  chmod +x "${BATS_TEST_DIRNAME}/libexec/pyenv-which"
-  PYENV_VERSION="system" run pyenv-prefix
-  assert_success "/"
-  rm -f "${BATS_TEST_DIRNAME}/libexec/pyenv-which"
-}
-
 @test "prefix for invalid system" {
   PATH="$(path_without python)" run pyenv-prefix system
   assert_failure "pyenv: system version not found in PATH"
