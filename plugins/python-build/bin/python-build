@@ -1934,9 +1934,7 @@ fi
 
 # Compile with `--enable-unicode=ucs4` by default (#257)
 if [[ "$PYTHON_CONFIGURE_OPTS" != *"--enable-unicode="* ]]; then
-  if ! is_mac; then
-    package_option python configure --enable-unicode=ucs4
-  fi
+  package_option python configure --enable-unicode=ucs4
 fi
 
 # SSL Certificate error with older wget that does not support Server Name Indication (#60)
