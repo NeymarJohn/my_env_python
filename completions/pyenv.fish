@@ -18,6 +18,5 @@ end
 
 complete -f -c pyenv -n '__fish_pyenv_needs_command' -a '(pyenv commands)'
 for cmd in (pyenv commands)
-  complete -f -c pyenv -n "__fish_pyenv_using_command $cmd" -a \
-    "(pyenv completions (commandline -opc)[2..-1])"
+  complete -f -c pyenv -n "__fish_pyenv_using_command $cmd" -a "(pyenv completions $cmd)"
 end
