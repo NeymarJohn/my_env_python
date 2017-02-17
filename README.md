@@ -1,74 +1,75 @@
-# Groom your app’s Ruby environment with rbenv.
+# Simple Python Version Management: pyenv
 
-Use rbenv to pick a Ruby version for your application and guarantee
-that your development environment matches production. Put rbenv to work
-with [Bundler](http://bundler.io/) for painless Ruby upgrades and
-bulletproof deployments.
+[![Join the chat at https://gitter.im/yyuu/pyenv](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/yyuu/pyenv?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-**Powerful in development.** Specify your app's Ruby version once,
-  in a single file. Keep all your teammates on the same page. No
-  headaches running apps on different versions of Ruby. Just Works™
-  from the command line and with app servers like [Pow](http://pow.cx).
-  Override the Ruby version anytime: just set an environment variable.
+[![Build Status](https://travis-ci.org/yyuu/pyenv.svg?branch=master)](https://travis-ci.org/yyuu/pyenv)
 
-**Rock-solid in production.** Your application's executables are its
-  interface with ops. With rbenv and [Bundler
-  binstubs](https://github.com/rbenv/rbenv/wiki/Understanding-binstubs)
-  you'll never again need to `cd` in a cron job or Chef recipe to
-  ensure you've selected the right runtime. The Ruby version
-  dependency lives in one place—your app—so upgrades and rollbacks are
-  atomic, even when you switch versions.
+pyenv lets you easily switch between multiple versions of Python. It's
+simple, unobtrusive, and follows the UNIX tradition of single-purpose
+tools that do one thing well.
 
-**One thing well.** rbenv is concerned solely with switching Ruby
-  versions. It's simple and predictable. A rich plugin ecosystem lets
-  you tailor it to suit your needs. Compile your own Ruby versions, or
-  use the [ruby-build][]
-  plugin to automate the process. Specify per-application environment
-  variables with [rbenv-vars](https://github.com/rbenv/rbenv-vars).
-  See more [plugins on the
-  wiki](https://github.com/rbenv/rbenv/wiki/Plugins).
+This project was forked from [rbenv](https://github.com/rbenv/rbenv) and
+[ruby-build](https://github.com/rbenv/ruby-build), and modified for Python.
 
-[**Why choose rbenv over
-RVM?**](https://github.com/rbenv/rbenv/wiki/Why-rbenv%3F)
+<img src="https://i.gyazo.com/699a58927b77e46e71cd674c7fc7a78d.png" width="735" height="490" />
+
+
+### pyenv _does..._
+
+* Let you **change the global Python version** on a per-user basis.
+* Provide support for **per-project Python versions**.
+* Allow you to **override the Python version** with an environment
+  variable.
+* Search commands from **multiple versions of Python at a time**.
+  This may be helpful to test across Python versions with [tox](https://pypi.python.org/pypi/tox).
+
+
+### In contrast with pythonbrew and pythonz, pyenv _does not..._
+
+* **Depend on Python itself.** pyenv was made from pure shell scripts.
+    There is no bootstrap problem of Python.
+* **Need to be loaded into your shell.** Instead, pyenv's shim
+    approach works by adding a directory to your `$PATH`.
+* **Manage virtualenv.** Of course, you can create [virtualenv](https://pypi.python.org/pypi/virtualenv)
+    yourself, or [pyenv-virtualenv](https://github.com/yyuu/pyenv-virtualenv)
+    to automate the process.
+
+
+----
+
 
 ## Table of Contents
 
-* [How It Works](#how-it-works)
+* **[How It Works](#how-it-works)**
   * [Understanding PATH](#understanding-path)
   * [Understanding Shims](#understanding-shims)
-  * [Choosing the Ruby Version](#choosing-the-ruby-version)
-  * [Locating the Ruby Installation](#locating-the-ruby-installation)
-* [Installation](#installation)
+  * [Choosing the Python Version](#choosing-the-python-version)
+  * [Locating the Python Installation](#locating-the-python-installation)
+* **[Installation](#installation)**
   * [Basic GitHub Checkout](#basic-github-checkout)
     * [Upgrading](#upgrading)
-  * [Homebrew on Mac OS X](#homebrew-on-mac-os-x)
-  * [How rbenv hooks into your shell](#how-rbenv-hooks-into-your-shell)
-  * [Installing Ruby versions](#installing-ruby-versions)
-    * [Installing Ruby gems](#installing-ruby-gems)
-  * [Uninstalling Ruby versions](#uninstalling-ruby-versions)
-  * [Uninstalling rbenv](#uninstalling-rbenv)
-* [Command Reference](#command-reference)
-  * [rbenv local](#rbenv-local)
-  * [rbenv global](#rbenv-global)
-  * [rbenv shell](#rbenv-shell)
-  * [rbenv versions](#rbenv-versions)
-  * [rbenv version](#rbenv-version)
-  * [rbenv rehash](#rbenv-rehash)
-  * [rbenv which](#rbenv-which)
-  * [rbenv whence](#rbenv-whence)
-* [Environment variables](#environment-variables)
-* [Development](#development)
+    * [Homebrew on Mac OS X](#homebrew-on-mac-os-x)
+    * [Advanced Configuration](#advanced-configuration)
+    * [Uninstalling Python Versions](#uninstalling-python-versions)
+* **[Command Reference](#command-reference)**
+* **[Development](#development)**
+  * [Version History](#version-history)
+  * [License](#license)
+
+
+----
+
 
 ## How It Works
 
-At a high level, rbenv intercepts Ruby commands using shim
-executables injected into your `PATH`, determines which Ruby version
+At a high level, pyenv intercepts Python commands using shim
+executables injected into your `PATH`, determines which Python version
 has been specified by your application, and passes your commands along
-to the correct Ruby installation.
+to the correct Python installation.
 
 ### Understanding PATH
 
-When you run a command like `ruby` or `rake`, your operating system
+When you run a command like `python` or `pip`, your operating system
 searches through a list of directories to find an executable file with
 that name. This list of directories lives in an environment variable
 called `PATH`, with each directory in the list separated by a colon:
@@ -83,398 +84,303 @@ then `/bin`.
 
 ### Understanding Shims
 
-rbenv works by inserting a directory of _shims_ at the front of your
+pyenv works by inserting a directory of _shims_ at the front of your
 `PATH`:
 
-    ~/.rbenv/shims:/usr/local/bin:/usr/bin:/bin
+    $(pyenv root)/shims:/usr/local/bin:/usr/bin:/bin
 
-Through a process called _rehashing_, rbenv maintains shims in that
-directory to match every Ruby command across every installed version
-of Ruby—`irb`, `gem`, `rake`, `rails`, `ruby`, and so on.
+Through a process called _rehashing_, pyenv maintains shims in that
+directory to match every Python command across every installed version
+of Python—`python`, `pip`, and so on.
 
 Shims are lightweight executables that simply pass your command along
-to rbenv. So with rbenv installed, when you run, say, `rake`, your
+to pyenv. So with pyenv installed, when you run, say, `pip`, your
 operating system will do the following:
 
-* Search your `PATH` for an executable file named `rake`
-* Find the rbenv shim named `rake` at the beginning of your `PATH`
-* Run the shim named `rake`, which in turn passes the command along to
-  rbenv
+* Search your `PATH` for an executable file named `pip`
+* Find the pyenv shim named `pip` at the beginning of your `PATH`
+* Run the shim named `pip`, which in turn passes the command along to
+  pyenv
 
-### Choosing the Ruby Version
+### Choosing the Python Version
 
-When you execute a shim, rbenv determines which Ruby version to use by
+When you execute a shim, pyenv determines which Python version to use by
 reading it from the following sources, in this order:
 
-1. The `RBENV_VERSION` environment variable, if specified. You can use
-   the [`rbenv shell`](#rbenv-shell) command to set this environment
+1. The `PYENV_VERSION` environment variable (if specified). You can use
+   the [`pyenv shell`](https://github.com/yyuu/pyenv/blob/master/COMMANDS.md#pyenv-shell) command to set this environment
    variable in your current shell session.
 
-2. The first `.ruby-version` file found by searching the directory of the
-   script you are executing and each of its parent directories until reaching
-   the root of your filesystem.
+2. The application-specific `.python-version` file in the current
+   directory (if present). You can modify the current directory's
+   `.python-version` file with the [`pyenv local`](https://github.com/yyuu/pyenv/blob/master/COMMANDS.md#pyenv-local)
+   command.
 
-3. The first `.ruby-version` file found by searching the current working
-   directory and each of its parent directories until reaching the root of your
-   filesystem. You can modify the `.ruby-version` file in the current working
-   directory with the [`rbenv local`](#rbenv-local) command.
+3. The first `.python-version` file found (if any) by searching each parent
+   directory, until reaching the root of your filesystem.
 
-4. The global `~/.rbenv/version` file. You can modify this file using
-   the [`rbenv global`](#rbenv-global) command. If the global version
-   file is not present, rbenv assumes you want to use the "system"
-   Ruby—i.e. whatever version would be run if rbenv weren't in your
-   path.
+4. The global `$(pyenv root)/version` file. You can modify this file using
+   the [`pyenv global`](https://github.com/yyuu/pyenv/blob/master/COMMANDS.md#pyenv-global) command. If the global version
+   file is not present, pyenv assumes you want to use the "system"
+   Python. (In other words, whatever version would run if pyenv weren't in your
+   `PATH`.)
 
-### Locating the Ruby Installation
+**NOTE:** You can activate multiple versions at the same time, including multiple
+versions of Python2 or Python3 simultaneously. This allows for parallel usage of
+Python2 and Python3, and is required with tools like `tox`. For example, to set
+your path to first use your `system` Python and Python3 (set to 2.7.9 and 3.4.2
+in this example), but also have Python 3.3.6, 3.2, and 2.5 available on your
+`PATH`, one would first `pyenv install` the missing versions, then set `pyenv
+global system 3.3.6 3.2 2.5`. At this point, one should be able to find the full
+executable path to each of these using `pyenv which`, e.g. `pyenv which python2.5`
+(should display `$(pyenv root)/versions/2.5/bin/python2.5`), or `pyenv which
+python3.4` (should display path to system Python3). You can also specify multiple
+versions in a `.python-version` file, separated by newlines or any whitespace.
 
-Once rbenv has determined which version of Ruby your application has
-specified, it passes the command along to the corresponding Ruby
+### Locating the Python Installation
+
+Once pyenv has determined which version of Python your application has
+specified, it passes the command along to the corresponding Python
 installation.
 
-Each Ruby version is installed into its own directory under
-`~/.rbenv/versions`. For example, you might have these versions
-installed:
+Each Python version is installed into its own directory under
+`$(pyenv root)/versions`.
 
-* `~/.rbenv/versions/1.8.7-p371/`
-* `~/.rbenv/versions/1.9.3-p327/`
-* `~/.rbenv/versions/jruby-1.7.1/`
+For example, you might have these versions installed:
 
-Version names to rbenv are simply the names of the directories in
-`~/.rbenv/versions`.
+* `$(pyenv root)/versions/2.7.8/`
+* `$(pyenv root)/versions/3.4.2/`
+* `$(pyenv root)/versions/pypy-2.4.0/`
+
+As far as pyenv is concerned, version names are simply the directories in
+`$(pyenv root)/versions`.
+
+### Managing Virtual Environments
+
+There is a pyenv plugin named [pyenv-virtualenv](https://github.com/yyuu/pyenv-virtualenv) which comes with various features to help pyenv users to manage virtual environments created by virtualenv or Anaconda.
+Because the `activate` script of those virtual environments are relying on mutating `$PATH` variable of user's interactive shell, it will intercept pyenv's shim style command execution hooks.
+We'd recommend to install pyenv-virtualenv as well if you have some plan to play with those virtual environments.
+
+
+----
+
 
 ## Installation
 
-**Compatibility note**: rbenv is _incompatible_ with RVM. Please make
-  sure to fully uninstall RVM and remove any references to it from
-  your shell initialization files before installing rbenv.
+If you're on Mac OS X, consider [installing with Homebrew](#homebrew-on-mac-os-x).
 
-If you're on Mac OS X, consider
-[installing with Homebrew](#homebrew-on-mac-os-x).
+
+### The automatic installer
+
+Visit my other project:
+https://github.com/yyuu/pyenv-installer
+
 
 ### Basic GitHub Checkout
 
-This will get you going with the latest version of rbenv and make it
+This will get you going with the latest version of pyenv and make it
 easy to fork and contribute any changes back upstream.
 
-1. Check out rbenv into `~/.rbenv`.
+1. **Check out pyenv where you want it installed.**
+   A good place to choose is `$HOME/.pyenv` (but you can install it somewhere else).
 
-    ~~~ sh
-    $ git clone https://github.com/rbenv/rbenv.git ~/.rbenv
-    ~~~
+        $ git clone https://github.com/yyuu/pyenv.git ~/.pyenv
 
-    Optionally, try to compile dynamic bash extension to speed up rbenv. Don't
-    worry if it fails; rbenv will still work normally:
 
-    ~~~
-    $ cd ~/.rbenv && src/configure && make -C src
-    ~~~
+2. **Define environment variable `PYENV_ROOT`** to point to the path where
+   pyenv repo is cloned and add `$PYENV_ROOT/bin` to your `$PATH` for access
+   to the `pyenv` command-line utility.
 
-2. Add `~/.rbenv/bin` to your `$PATH` for access to the `rbenv`
-   command-line utility.
+    ```sh
+    $ echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bash_profile
+    $ echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bash_profile
+    ```
+    **Zsh note**: Modify your `~/.zshenv` file instead of `~/.bash_profile`.  
+    **Ubuntu and Fedora note**: Modify your `~/.bashrc` file instead of `~/.bash_profile`.
 
-    ~~~ sh
-    $ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile
-    ~~~
+3. **Add `pyenv init` to your shell** to enable shims and autocompletion.
+   Please make sure `eval "$(pyenv init -)"` is placed toward the end of the shell
+   configuration file since it manipulates `PATH` during the initialization.
+    ```sh
+    $ echo 'eval "$(pyenv init -)"' >> ~/.bash_profile
+    ```
+    **Zsh note**: Modify your `~/.zshenv` file instead of `~/.bash_profile`.  
+    **Ubuntu and Fedora note**: Modify your `~/.bashrc` file instead of `~/.bash_profile`.
+    
+    **General warning**: There are some systems where the `BASH_ENV` variable is configured
+    to point to `.bashrc`. On such systems you should almost certainly put the abovementioned line
+    `eval "$(pyenv init -)` into `.bash_profile`, and **not** into `.bashrc`. Otherwise you
+    may observe strange behaviour, such as `pyenv` getting into an infinite loop.
+    See [#264](https://github.com/yyuu/pyenv/issues/264) for details.
 
-    **Ubuntu Desktop note**: Modify your `~/.bashrc` instead of `~/.bash_profile`.
+4. **Restart your shell so the path changes take effect.**
+   You can now begin using pyenv.
+    ```sh
+    $ exec $SHELL
+    ```
+5. **Install Python versions into `$(pyenv root)/versions`.**
+   For example, to download and install Python 2.7.8, run:
+    ```sh
+    $ pyenv install 2.7.8
+    ```
+   **NOTE:** If you need to pass configure option to build, please use
+   ```CONFIGURE_OPTS``` environment variable.
+   
+   **NOTE:** If you want to use proxy to download, please use `http_proxy` and `https_proxy`
+   environment variable.
 
-    **Zsh note**: Modify your `~/.zshrc` file instead of `~/.bash_profile`.
+   **NOTE:** If you are having trouble installing a python version,
+   please visit the wiki page about
+   [Common Build Problems](https://github.com/yyuu/pyenv/wiki/Common-build-problems)
 
-3. Run `~/.rbenv/bin/rbenv init` for shell-specific instructions on how to
-   initialize rbenv to enable shims and autocompletion.
-
-4. Restart your shell so that PATH changes take effect. (Opening a new
-   terminal tab will usually do it.) Now check if rbenv was set up:
-
-    ~~~ sh
-    $ type rbenv
-    #=> "rbenv is a function"
-    ~~~
-
-5. _(Optional)_ Install [ruby-build][], which provides the
-   `rbenv install` command that simplifies the process of
-   [installing new Ruby versions](#installing-ruby-versions).
 
 #### Upgrading
 
-If you've installed rbenv manually using git, you can upgrade your
-installation to the cutting-edge version at any time.
+If you've installed pyenv using the instructions above, you can
+upgrade your installation at any time using git.
 
-~~~ sh
-$ cd ~/.rbenv
+To upgrade to the latest development version of pyenv, use `git pull`:
+
+```sh
+$ cd $(pyenv root)
 $ git pull
-~~~
+```
 
-To use a specific release of rbenv, check out the corresponding tag:
+To upgrade to a specific release of pyenv, check out the corresponding tag:
 
-~~~ sh
-$ cd ~/.rbenv
+```sh
+$ cd $(pyenv root)
 $ git fetch
-$ git checkout v0.3.0
-~~~
+$ git tag
+v0.1.0
+$ git checkout v0.1.0
+```
 
-If you've [installed via Homebrew](#homebrew-on-mac-os-x), then upgrade
-via its `brew` command:
+### Uninstalling pyenv
 
-~~~ sh
-$ brew update
-$ brew upgrade rbenv ruby-build
-~~~
+The simplicity of pyenv makes it easy to temporarily disable it, or
+uninstall from the system.
+
+1. To **disable** pyenv managing your Python versions, simply remove the
+  `pyenv init` line from your shell startup configuration. This will
+  remove pyenv shims directory from PATH, and future invocations like
+  `python` will execute the system Python version, as before pyenv.
+
+  `pyenv` will still be accessible on the command line, but your Python
+  apps won't be affected by version switching.
+
+2. To completely **uninstall** pyenv, perform step (1) and then remove
+   its root directory. This will **delete all Python versions** that were
+   installed under `` $(pyenv root)/versions/ `` directory:
+    ```sh
+    rm -rf $(pyenv root)
+    ```
+   If you've installed pyenv using a package manager, as a final step
+   perform the pyenv package removal. For instance, for Homebrew:
+
+        brew uninstall pyenv
+
+## Command Reference
 
 ### Homebrew on Mac OS X
 
-As an alternative to installation via GitHub checkout, you can install
-rbenv and [ruby-build][] using the [Homebrew](http://brew.sh) package
-manager on Mac OS X:
+You can also install pyenv using the [Homebrew](http://brew.sh)
+package manager for Mac OS X.
 
-~~~
-$ brew update
-$ brew install rbenv
-~~~
+    $ brew update
+    $ brew install pyenv
 
-Afterwards you'll still need to run `rbenv init` for instructions
-as stated in the caveats. You'll only ever have to do this once.
 
-### How rbenv hooks into your shell
+To upgrade pyenv in the future, use `upgrade` instead of `install`.
+
+After installation, you'll need to add `eval "$(pyenv init -)"` to your profile (as stated in the caveats displayed by Homebrew — to display them again, use `brew info pyenv`). You only need to add that to your profile once.
+
+Then follow the rest of the post-installation steps under "Basic GitHub Checkout" above, starting with #4 ("restart your shell so the path changes take effect").
+
+### Advanced Configuration
 
 Skip this section unless you must know what every line in your shell
 profile is doing.
 
-`rbenv init` is the only command that crosses the line of loading
-extra commands into your shell. Coming from RVM, some of you might be
-opposed to this idea. Here's what `rbenv init` actually does:
+`pyenv init` is the only command that crosses the line of loading
+extra commands into your shell. Coming from rvm, some of you might be
+opposed to this idea. Here's what `pyenv init` actually does:
 
-1. Sets up your shims path. This is the only requirement for rbenv to
+1. **Sets up your shims path.** This is the only requirement for pyenv to
    function properly. You can do this by hand by prepending
-   `~/.rbenv/shims` to your `$PATH`.
+   `$(pyenv root)/shims` to your `$PATH`.
 
-2. Installs autocompletion. This is entirely optional but pretty
-   useful. Sourcing `~/.rbenv/completions/rbenv.bash` will set that
-   up. There is also a `~/.rbenv/completions/rbenv.zsh` for Zsh
+2. **Installs autocompletion.** This is entirely optional but pretty
+   useful. Sourcing `$(pyenv root)/completions/pyenv.bash` will set that
+   up. There is also a `$(pyenv root)/completions/pyenv.zsh` for Zsh
    users.
 
-3. Rehashes shims. From time to time you'll need to rebuild your
-   shim files. Doing this automatically makes sure everything is up to
-   date. You can always run `rbenv rehash` manually.
+3. **Rehashes shims.** From time to time you'll need to rebuild your
+   shim files. Doing this on init makes sure everything is up to
+   date. You can always run `pyenv rehash` manually.
 
-4. Installs the sh dispatcher. This bit is also optional, but allows
-   rbenv and plugins to change variables in your current shell, making
-   commands like `rbenv shell` possible. The sh dispatcher doesn't do
+4. **Installs the sh dispatcher.** This bit is also optional, but allows
+   pyenv and plugins to change variables in your current shell, making
+   commands like `pyenv shell` possible. The sh dispatcher doesn't do
    anything crazy like override `cd` or hack your shell prompt, but if
-   for some reason you need `rbenv` to be a real script rather than a
+   for some reason you need `pyenv` to be a real script rather than a
    shell function, you can safely skip it.
 
-Run `rbenv init -` for yourself to see exactly what happens under the
-hood.
+To see exactly what happens under the hood for yourself, run `pyenv init -`.
 
-### Installing Ruby versions
 
-The `rbenv install` command doesn't ship with rbenv out of the box, but
-is provided by the [ruby-build][] project. If you installed it either
-as part of GitHub checkout process outlined above or via Homebrew, you
-should be able to:
+### Uninstalling Python Versions
 
-~~~ sh
-# list all available versions:
-$ rbenv install -l
+As time goes on, you will accumulate Python versions in your
+`$(pyenv root)/versions` directory.
 
-# install a Ruby version:
-$ rbenv install 2.0.0-p247
-~~~
+To remove old Python versions, `pyenv uninstall` command to automate
+the removal process.
 
-Alternatively to the `install` command, you can download and compile
-Ruby manually as a subdirectory of `~/.rbenv/versions/`. An entry in
-that directory can also be a symlink to a Ruby version installed
-elsewhere on the filesystem. rbenv doesn't care; it will simply treat
-any entry in the `versions/` directory as a separate Ruby version.
+Alternatively, simply `rm -rf` the directory of the version you want
+to remove. You can find the directory of a particular Python version
+with the `pyenv prefix` command, e.g. `pyenv prefix 2.6.8`.
 
-#### Installing Ruby gems
 
-Once you've installed some Ruby versions, you'll want to install gems.
-First, ensure that the target version for your project is the one you want by
-checking `rbenv version` (see [Command Reference](#command-reference)). Select
-another version using `rbenv local 2.0.0-p247`, for example. Then, proceed to
-install gems as you normally would:
+----
 
-```sh
-$ gem install bundler
-```
-
-**You don't need sudo** to install gems. Typically, the Ruby versions will be
-installed and writeable by your user. No extra privileges are required to
-install gems.
-
-Check the location where gems are being installed with `gem env`:
-
-```sh
-$ gem env home
-# => ~/.rbenv/versions/<ruby-version>/lib/ruby/gems/...
-```
-
-### Uninstalling Ruby versions
-
-As time goes on, Ruby versions you install will accumulate in your
-`~/.rbenv/versions` directory.
-
-To remove old Ruby versions, simply `rm -rf` the directory of the
-version you want to remove. You can find the directory of a particular
-Ruby version with the `rbenv prefix` command, e.g. `rbenv prefix
-1.8.7-p357`.
-
-The [ruby-build][] plugin provides an `rbenv uninstall` command to
-automate the removal process.
-
-### Uninstalling rbenv
-
-The simplicity of rbenv makes it easy to temporarily disable it, or
-uninstall from the system.
-
-1. To **disable** rbenv managing your Ruby versions, simply remove the
-  `rbenv init` line from your shell startup configuration. This will
-  remove rbenv shims directory from PATH, and future invocations like
-  `ruby` will execute the system Ruby version, as before rbenv.
-
-  `rbenv` will still be accessible on the command line, but your Ruby
-  apps won't be affected by version switching.
-
-2. To completely **uninstall** rbenv, perform step (1) and then remove
-   its root directory. This will **delete all Ruby versions** that were
-   installed under `` `rbenv root`/versions/ `` directory:
-
-        rm -rf `rbenv root`
-
-   If you've installed rbenv using a package manager, as a final step
-   perform the rbenv package removal. For instance, for Homebrew:
-
-        brew uninstall rbenv
 
 ## Command Reference
 
-Like `git`, the `rbenv` command delegates to subcommands based on its
-first argument. The most common subcommands are:
+See [COMMANDS.md](COMMANDS.md).
 
-### rbenv local
 
-Sets a local application-specific Ruby version by writing the version
-name to a `.ruby-version` file in the current directory. This version
-overrides the global version, and can be overridden itself by setting
-the `RBENV_VERSION` environment variable or with the `rbenv shell`
-command.
-
-    $ rbenv local 1.9.3-p327
-
-When run without a version number, `rbenv local` reports the currently
-configured local version. You can also unset the local version:
-
-    $ rbenv local --unset
-
-### rbenv global
-
-Sets the global version of Ruby to be used in all shells by writing
-the version name to the `~/.rbenv/version` file. This version can be
-overridden by an application-specific `.ruby-version` file, or by
-setting the `RBENV_VERSION` environment variable.
-
-    $ rbenv global 1.8.7-p352
-
-The special version name `system` tells rbenv to use the system Ruby
-(detected by searching your `$PATH`).
-
-When run without a version number, `rbenv global` reports the
-currently configured global version.
-
-### rbenv shell
-
-Sets a shell-specific Ruby version by setting the `RBENV_VERSION`
-environment variable in your shell. This version overrides
-application-specific versions and the global version.
-
-    $ rbenv shell jruby-1.7.1
-
-When run without a version number, `rbenv shell` reports the current
-value of `RBENV_VERSION`. You can also unset the shell version:
-
-    $ rbenv shell --unset
-
-Note that you'll need rbenv's shell integration enabled (step 3 of
-the installation instructions) in order to use this command. If you
-prefer not to use shell integration, you may simply set the
-`RBENV_VERSION` variable yourself:
-
-    $ export RBENV_VERSION=jruby-1.7.1
-
-### rbenv versions
-
-Lists all Ruby versions known to rbenv, and shows an asterisk next to
-the currently active version.
-
-    $ rbenv versions
-      1.8.7-p352
-      1.9.2-p290
-    * 1.9.3-p327 (set by /Users/sam/.rbenv/version)
-      jruby-1.7.1
-      rbx-1.2.4
-      ree-1.8.7-2011.03
-
-### rbenv version
-
-Displays the currently active Ruby version, along with information on
-how it was set.
-
-    $ rbenv version
-    1.9.3-p327 (set by /Users/sam/.rbenv/version)
-
-### rbenv rehash
-
-Installs shims for all Ruby executables known to rbenv (i.e.,
-`~/.rbenv/versions/*/bin/*`). Run this command after you install a new
-version of Ruby, or install a gem that provides commands.
-
-    $ rbenv rehash
-
-### rbenv which
-
-Displays the full path to the executable that rbenv will invoke when
-you run the given command.
-
-    $ rbenv which irb
-    /Users/sam/.rbenv/versions/1.9.3-p327/bin/irb
-
-### rbenv whence
-
-Lists all Ruby versions with the given command installed.
-
-    $ rbenv whence rackup
-    1.9.3-p327
-    jruby-1.7.1
-    ree-1.8.7-2011.03
+----
 
 ## Environment variables
 
-You can affect how rbenv operates with the following settings:
+You can affect how pyenv operates with the following settings:
 
 name | default | description
 -----|---------|------------
-`RBENV_VERSION` | | Specifies the Ruby version to be used.<br>Also see [`rbenv shell`](#rbenv-shell)
-`RBENV_ROOT` | `~/.rbenv` | Defines the directory under which Ruby versions and shims reside.<br>Also see `rbenv root`
-`RBENV_DEBUG` | | Outputs debug information.<br>Also as: `rbenv --debug <subcommand>`
-`RBENV_HOOK_PATH` | [_see wiki_][hooks] | Colon-separated list of paths searched for rbenv hooks.
-`RBENV_DIR` | `$PWD` | Directory to start searching for `.ruby-version` files.
+`PYENV_VERSION` | | Specifies the Python version to be used.<br>Also see [`pyenv shell`](#pyenv-shell)
+`PYENV_ROOT` | `~/.pyenv` | Defines the directory under which Python versions and shims reside.<br>Also see `pyenv root`
+`PYENV_DEBUG` | | Outputs debug information.<br>Also as: `pyenv --debug <subcommand>`
+`PYENV_HOOK_PATH` | [_see wiki_][hooks] | Colon-separated list of paths searched for pyenv hooks.
+`PYENV_DIR` | `$PWD` | Directory to start searching for `.python-version` files.
+`PYTHON_BUILD_ARIA2_OPTS` | | Used to pass aditional parameters to [`aria2`](https://aria2.github.io/).<br>if `aria2c` binary is available on PATH, pyenv use `aria2c` instead of `curl` or `wget` to download the Python Source code. If you have an unstable internet connection, you can use this variable to instruct `aria2` to accelerate the download.<br>In most cases, you will only need to use `-x 10 -k 1M` as value to `PYTHON_BUILD_ARIA2_OPTS` environment variable
+
+
 
 ## Development
 
-The rbenv source code is [hosted on
-GitHub](https://github.com/rbenv/rbenv). It's clean, modular,
+The pyenv source code is [hosted on
+GitHub](https://github.com/yyuu/pyenv).  It's clean, modular,
 and easy to understand, even if you're not a shell hacker.
 
 Tests are executed using [Bats](https://github.com/sstephenson/bats):
 
     $ bats test
-    $ bats test/<file>.bats
+    $ bats/test/<file>.bats
 
 Please feel free to submit pull requests and file bugs on the [issue
-tracker](https://github.com/rbenv/rbenv/issues).
+tracker](https://github.com/yyuu/pyenv/issues).
 
 
-  [ruby-build]: https://github.com/rbenv/ruby-build#readme
-  [hooks]: https://github.com/rbenv/rbenv/wiki/Authoring-plugins#rbenv-hooks
+  [pyenv-virtualenv]: https://github.com/yyuu/pyenv-virtualenv#readme
+  [hooks]: https://github.com/yyuu/pyenv/wiki/Authoring-plugins#pyenv-hooks
