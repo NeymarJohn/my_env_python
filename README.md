@@ -196,8 +196,7 @@ easy to fork and contribute any changes back upstream.
     $ echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bash_profile
     ```
     **Zsh note**: Modify your `~/.zshenv` file instead of `~/.bash_profile`.  
-    **Ubuntu and Fedora note**: Modify your `~/.bashrc` file instead of `~/.bash_profile`.  
-    **Proxy note**: If you use a proxy, export `http_proxy` and `HTTPS_PROXY` too.
+    **Ubuntu and Fedora note**: Modify your `~/.bashrc` file instead of `~/.bash_profile`.
 
 3. **Add `pyenv init` to your shell** to enable shims and autocompletion.
    Please make sure `eval "$(pyenv init -)"` is placed toward the end of the shell
