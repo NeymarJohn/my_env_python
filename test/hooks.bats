@@ -3,57 +3,57 @@
 load test_helper
 
 @test "prints usage help given no argument" {
-  run pyenv-hooks
-  assert_failure "Usage: pyenv hooks <command>"
+  run rbenv-hooks
+  assert_failure "Usage: rbenv hooks <command>"
 }
 
 @test "prints list of hooks" {
-  path1="${PYENV_TEST_DIR}/pyenv.d"
-  path2="${PYENV_TEST_DIR}/etc/pyenv_hooks"
-  PYENV_HOOK_PATH="$path1"
+  path1="${RBENV_TEST_DIR}/rbenv.d"
+  path2="${RBENV_TEST_DIR}/etc/rbenv_hooks"
+  RBENV_HOOK_PATH="$path1"
   create_hook exec "hello.bash"
   create_hook exec "ahoy.bash"
   create_hook exec "invalid.sh"
   create_hook which "boom.bash"
-  PYENV_HOOK_PATH="$path2"
+  RBENV_HOOK_PATH="$path2"
   create_hook exec "bueno.bash"
 
-  PYENV_HOOK_PATH="$path1:$path2" run pyenv-hooks exec
+  RBENV_HOOK_PATH="$path1:$path2" run rbenv-hooks exec
   assert_success
   assert_output <<OUT
-${PYENV_TEST_DIR}/pyenv.d/exec/ahoy.bash
-${PYENV_TEST_DIR}/pyenv.d/exec/hello.bash
-${PYENV_TEST_DIR}/etc/pyenv_hooks/exec/bueno.bash
+${RBENV_TEST_DIR}/rbenv.d/exec/ahoy.bash
+${RBENV_TEST_DIR}/rbenv.d/exec/hello.bash
+${RBENV_TEST_DIR}/etc/rbenv_hooks/exec/bueno.bash
 OUT
 }
 
 @test "supports hook paths with spaces" {
-  path1="${PYENV_TEST_DIR}/my hooks/pyenv.d"
-  path2="${PYENV_TEST_DIR}/etc/pyenv hooks"
-  PYENV_HOOK_PATH="$path1"
+  path1="${RBENV_TEST_DIR}/my hooks/rbenv.d"
+  path2="${RBENV_TEST_DIR}/etc/rbenv hooks"
+  RBENV_HOOK_PATH="$path1"
   create_hook exec "hello.bash"
-  PYENV_HOOK_PATH="$path2"
+  RBENV_HOOK_PATH="$path2"
   create_hook exec "ahoy.bash"
 
-  PYENV_HOOK_PATH="$path1:$path2" run pyenv-hooks exec
+  RBENV_HOOK_PATH="$path1:$path2" run rbenv-hooks exec
   assert_success
   assert_output <<OUT
-${PYENV_TEST_DIR}/my hooks/pyenv.d/exec/hello.bash
-${PYENV_TEST_DIR}/etc/pyenv hooks/exec/ahoy.bash
+${RBENV_TEST_DIR}/my hooks/rbenv.d/exec/hello.bash
+${RBENV_TEST_DIR}/etc/rbenv hooks/exec/ahoy.bash
 OUT
 }
 
 @test "resolves relative paths" {
-  PYENV_HOOK_PATH="${PYENV_TEST_DIR}/pyenv.d"
+  RBENV_HOOK_PATH="${RBENV_TEST_DIR}/rbenv.d"
   create_hook exec "hello.bash"
   mkdir -p "$HOME"
 
-  PYENV_HOOK_PATH="${HOME}/../pyenv.d" run pyenv-hooks exec
-  assert_success "${PYENV_TEST_DIR}/pyenv.d/exec/hello.bash"
+  RBENV_HOOK_PATH="${HOME}/../rbenv.d" run rbenv-hooks exec
+  assert_success "${RBENV_TEST_DIR}/rbenv.d/exec/hello.bash"
 }
 
 @test "resolves symlinks" {
-  path="${PYENV_TEST_DIR}/pyenv.d"
+  path="${RBENV_TEST_DIR}/rbenv.d"
   mkdir -p "${path}/exec"
   mkdir -p "$HOME"
   touch "${HOME}/hola.bash"
@@ -61,10 +61,10 @@ OUT
   touch "${path}/exec/bright.sh"
   ln -s "bright.sh" "${path}/exec/world.bash"
 
-  PYENV_HOOK_PATH="$path" run pyenv-hooks exec
+  RBENV_HOOK_PATH="$path" run rbenv-hooks exec
   assert_success
   assert_output <<OUT
 ${HOME}/hola.bash
-${PYENV_TEST_DIR}/pyenv.d/exec/bright.sh
+${RBENV_TEST_DIR}/rbenv.d/exec/bright.sh
 OUT
 }
