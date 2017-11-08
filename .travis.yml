@@ -1,7 +1,10 @@
 sudo: false
 install: git clone --depth 1 https://github.com/sstephenson/bats.git
-script: PATH="./bats/bin:$PATH" test/run
+script: make test
 language: c
 env:
-  - RBENV_NATIVE_EXT=
-  - RBENV_NATIVE_EXT=1
+  - PYENV_NATIVE_EXT=
+  - PYENV_NATIVE_EXT=1
+notifications:
+  email:
+    on_success: never
