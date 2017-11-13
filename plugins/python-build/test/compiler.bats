@@ -8,13 +8,16 @@ export -n CC
 export -n PYTHON_CONFIGURE_OPTS
 
 @test "require_gcc on OS X 10.9" {
-  # pyenv/pyenv#1026
-  stub uname false '-s : echo Darwin'
+  # yyuu/pyenv#222
+  stub uname '-s : echo Darwin'
   stub sw_vers '-productVersion : echo 10.9.5'
+
+  # yyuu/pyenv#257
+  stub uname '-s : echo Darwin'
 
   stub uname '-s : echo Darwin'
   stub sw_vers '-productVersion : echo 10.9.5'
-  stub gcc '--version : echo 4.2.1' '--version : echo 4.2.1'
+  stub gcc '--version : echo 4.2.1'
 
   run_inline_definition <<DEF
 require_gcc
@@ -29,13 +32,16 @@ OUT
 }
 
 @test "require_gcc on OS X 10.10" {
-  # pyenv/pyenv#1026
-  stub uname false '-s : echo Darwin'
+  # yyuu/pyenv#222
+  stub uname '-s : echo Darwin'
   stub sw_vers '-productVersion : echo 10.10'
+
+  # yyuu/pyenv#257
+  stub uname '-s : echo Darwin'
 
   stub uname '-s : echo Darwin'
   stub sw_vers '-productVersion : echo 10.10'
-  stub gcc '--version : echo 4.2.1' '--version : echo 4.2.1'
+  stub gcc '--version : echo 4.2.1'
 
   run_inline_definition <<DEF
 require_gcc
@@ -50,7 +56,7 @@ OUT
 }
 
 @test "require_gcc silences warnings" {
-  stub gcc '--version : echo warning >&2; echo 4.2.1' '--version : echo warning >&2; echo 4.2.1'
+  stub gcc '--version : echo warning >&2; echo 4.2.1'
 
   run_inline_definition <<DEF
 require_gcc
@@ -63,10 +69,14 @@ DEF
   mkdir -p "$INSTALL_ROOT"
   cd "$INSTALL_ROOT"
 
-  # pyenv/pyenv#1026
-  stub uname false '-s : echo Darwin' false '-s : echo Darwin'
+  # yyuu/pyenv#222
+  stub uname '-s : echo Darwin'
   stub sw_vers '-productVersion : echo 10.10'
 
+  # yyuu/pyenv#257
+  stub uname '-s : echo Darwin'
+
+  stub uname '-s : echo Darwin'
   stub sw_vers '-productVersion : echo 10.10'
   stub cc 'false'
   stub brew 'false'

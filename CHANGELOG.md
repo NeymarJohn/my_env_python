@@ -1,45 +1,5 @@
 ## Version History
 
-## Unreleased
-
-* python-build: Add PyPy 5.9.0
-* python-build: Add Miniconda[23] 4.3.14, 4.3.21, 4.3.27, 4.3.30
-* python-build: Add Anaconda[23] 5.0.1
-* python-build: Update Anaconda[23] 5.0.0 to 5.0.0.1 bugfix release
-
-## v1.1.5
-
-* python-build: Add CPython 3.6.3
-* python-build: Add CPython 3.7.0a1
-* python-build: Add Anaconda[23] 5.0.0
-
-## v1.1.4
-
-* pyenv: Workaround for scripts in `$PATH` which needs to be source'd (#100, #688, #953)
-* python-build: Add support for PyPy3 executables like `libpypy3-c.so` (#955, #956)
-* python-build: Add CPython 2.7.14, 3.4.7, 3.5.4 (#965, #971, #980)
-* python-build: Add Jython 2.7.1 (#973)
-
-## v1.1.3
-
-* python-build: Add CPython 3.6.2 (#951)
-
-## v1.1.2
-
-* pyenv: Fix incorrect `pyenv --version` output in v1.1.1 (#947)
-
-## v1.1.1
-
-* python-build: Update links to Portable Pypy 5.8-1 bugfix release, affects pypy2.7-5.8.0 and pypy3.5-5.8.0 definitions (#939)
-
-## v1.1.0
-
-* python-build: Add PyPy 5.7.1 (#888)
-* pyenv: Merge rbenv master (#927)
-* python-build: Add PyPy 5.8.0 (#932)
-* python-build: Anaconda[23] 4.4.0
-* python-build: Add micropython-dev
-
 ## 1.0.10
 
 * python-build: Add Anaconda2/Anaconda3 4.3.1 (#876)
@@ -193,12 +153,12 @@
 
 * pyenv: Merge recent changes from rbenv as of 2015-12-14 (#504)
 * python-build: Add a `OPENSSL_NO_SSL3` patch for CPython 2.6, 2.7, 3.0, 3.1, 3.2 and 3.3 series (#507, #511)
-* python-build: Stopped using mirror at pyenv.github.io for CPython since http://www.python.org is on fast.ly
+* python-build: Stopped using mirror at yyuu.github.io for CPython since http://www.python.org is on fast.ly
 
 ### 20151210
 
 * pyenv: Add a default hook for Anaconda to look for original `$PATH` (#491)
-* pyenv: Skip virtualenv aliases on `pyenv versions --skip-aliases` (pyenv/pyenv-virtualenv#126)
+* pyenv: Skip virtualenv aliases on `pyenv versions --skip-aliases` (yyuu/pyenv-virtualenv#126)
 * python-build: Add CPython 2.7.11, 3.5.1 (#494, #498)
 * python-build: Update OpenSSL to 1.0.1q (#496)
 * python-build: Adding SSL patch to build 2.7.3 on Debian (#495)
@@ -310,7 +270,7 @@
 
 #### 20141211
 
-* pyenv: Add built-in `pip-rehash` feature. You don't need to install [pyenv-pip-rehash](https://github.com/pyenv/pyenv-pip-rehash) anymore.
+* pyenv: Add built-in `pip-rehash` feature. You don't need to install [pyenv-pip-rehash](https://github.com/yyuu/pyenv-pip-rehash) anymore.
 * python-build: Add new CPython release; 2.7.9 (#284)
 * python-build: Add new PyPy releases; pypy3-2.4.0, pypy3-2.4.0-src (#277)
 * python-build: Add build definitions of PyPy nightly build
@@ -422,7 +382,7 @@
 * python-build: Do not exit with errors even if some of modules are absent (#131)
 * python-build: MacOSX was misspelled as MaxOSX in `anaconda_architecture` (#136)
 * python-build: Use default `cc` as the C Compiler to build CPython (#148, #150)
-* python-build: Display value from `pypy_architecture` and `anaconda_architecture` on errors (pyenv/pyenv-virtualenv#18)
+* python-build: Display value from `pypy_architecture` and `anaconda_architecture` on errors (yyuu/pyenv-virtualenv#18)
 * python-build: Remove old development version; 2.6-dev
 * python-build: Update default setuptools version (3.3 -> 3.4.1)
 
@@ -476,7 +436,7 @@
 * python-build: Activate friendly CPython during build if the one is not activated (8fa6b4a1847851919ad7857c6c42ed809a4d277b)
 * python-build: Fix broken install.sh
 * python-build: Import recent changes from ruby-build v20131225.1
-* version-ext-compat: Removed from default plugin. Please use [pyenv-version-ext](https://github.com/pyenv/pyenv-version-ext) instead.
+* version-ext-compat: Removed from default plugin. Please use [pyenv-version-ext](https://github.com/yyuu/pyenv-version-ext) instead.
 
 #### 0.4.0-20131217
 
