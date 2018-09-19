@@ -60,21 +60,20 @@ resolve_link() {
 }
 
 abs_dirname() {
+  local cwd="$(pwd)"
   local path="$1"
 
-  # Use a subshell to avoid changing the current path
+  # Use a subshell to avoid modifying the current path
   (
   while [ -n "$path" ]; do
-    cd_path="${path%/*}"
-    if [[ "$cd_path" != "$path" ]]; then
-      cd "$cd_path"
-    fi
-    name="${path##*/}"
+    cd "${path%/*}"
+    local name="${path##*/}"
     path="$(resolve_link "$name" || true)"
   done
 
-  echo "$PWD"
+  pwd
   )
+# cd "$cwd"
 }
 
 capitalize() {
