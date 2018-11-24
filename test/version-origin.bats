@@ -26,7 +26,7 @@ setup() {
 }
 
 @test "detects local file" {
-  echo "system" > .python-version
+  touch .python-version
   run pyenv-version-origin
   assert_success "${PWD}/.python-version"
 }

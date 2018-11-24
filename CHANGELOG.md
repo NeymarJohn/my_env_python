@@ -1,63 +1,7 @@
 ## Version History
 
-## 1.2.8
+## Unreleased
 
-* python-build: Add CPython 3.7.1
-* python-build: Add CPython 3.6.7
-* python-build: Add anaconda[23]-5.3.0 (#1220)
-
-## 1.2.7
-
-* python-build: Add CPython 3.5.6 (#1199)
-* python-build: Add CPython 3.4.9
-
-## 1.2.6
-
-* python-build: Added CPython 3.6.6 (#1178)
-* python-build: Check wget version iff wget is going to be used (#1180)
-
-## 1.2.5
-
-* python-build: Add CPython 3.7.0 (#1177)
-* python-build: Add micropython 1.9.4 (#1160)
-* python-build: Add anaconda[23]-5.2.0 (#1165)
-* pyenv: Fix `seq(1)` is not available on OpenBSD (#1166)
-
-## 1.2.4
-
-* python-build: Add CPython 2.7.15
-* python-build: Add PyPy 6.0.0
-* python-build: Allow overriding HTTP client type based on environment variable `PYTHON_BUILD_HTTP_CLIENT` (#1126)
-* python-build: Use version-specific `get-pip.py` when installing 2.6 and 3.2 (#1131)
-* pyenv: Merge rbenv master (#1151)
-* pyenv: Make `pyenv-rehash` safer for multiple processes (#1092)
-
-## 1.2.3
-
-* python-build: Add CPython 3.6.5
-* python-build: Set openssl PKG_CONFIG_PATH for python 3.7 (#1117)
-* python-build: Add ActivePython versions 2.7.14, 3.5.4, 3.6.0 (#1113)
-* python-build: Unset `PIP_VERSION` before invoking `get-pip.py` as a workaround for `invalid truth value` error (#1124)
-
-## 1.2.2
-
-* python-build: Add PyPy3 5.10.1 (#1084)
-* python-build: Add CPython 3.5.5 (#1090)
-* python-build: Add Anaconda[23]-5.1.0 (#1100)
-* python-build: Fix checksum issue for CPython 3.4.8 (#1094)
-* python-build: Prevent Anaconda from installing a `clear` shim (#1084)
-## 1.2.1
-
-* python-build: Add CPython 3.6.4
-* python-build: Add PyPy[23] 5.10
-
-## 1.2.0
-
-* python-build: Import changes from ruby-build v20171031 (#1026)
-* python-build: Ignore LibreSSL bundled with macOS 10.13 (#1025)
-* python-build: Skip passing `--enable-unicode` to CPython 3.3+ (#912)
-* python-build: Add CPython 3.3.7 (#1053)
-* python-build: Add micropython 1.9.3
 * python-build: Add PyPy 5.9.0
 * python-build: Add Miniconda[23] 4.3.14, 4.3.21, 4.3.27, 4.3.30
 * python-build: Add Anaconda[23] 5.0.1
