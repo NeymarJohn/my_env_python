@@ -11,7 +11,7 @@ tools that do one thing well.
 This project was forked from [rbenv](https://github.com/rbenv/rbenv) and
 [ruby-build](https://github.com/rbenv/ruby-build), and modified for Python.
 
-<img src="https://i.gyazo.com/699a58927b77e46e71cd674c7fc7a78d.png" width="735" height="490" />
+![Terminal output example](/terminal_output.png)
 
 
 ### pyenv _does..._
@@ -48,7 +48,7 @@ This project was forked from [rbenv](https://github.com/rbenv/rbenv) and
 * **[Installation](#installation)**
   * [Basic GitHub Checkout](#basic-github-checkout)
     * [Upgrading](#upgrading)
-    * [Homebrew on Mac OS X](#homebrew-on-mac-os-x)
+    * [Homebrew on macOS](#homebrew-on-macos)
     * [Advanced Configuration](#advanced-configuration)
     * [Uninstalling Python Versions](#uninstalling-python-versions)
 * **[Command Reference](#command-reference)**
@@ -167,7 +167,7 @@ We'd recommend to install pyenv-virtualenv as well if you have some plan to play
 
 ## Installation
 
-If you're on Mac OS X, consider [installing with Homebrew](#homebrew-on-mac-os-x).
+If you're on macOS, consider [installing with Homebrew](#homebrew-on-macos).
 
 
 ### The automatic installer
@@ -195,8 +195,8 @@ easy to fork and contribute any changes back upstream.
     $ echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bash_profile
     $ echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bash_profile
     ```
-    **Zsh note**: Modify your `~/.zshenv` file instead of `~/.bash_profile`.  
-    **Ubuntu and Fedora note**: Modify your `~/.bashrc` file instead of `~/.bash_profile`.  
+    **Zsh note**: Modify your `~/.zshenv` file instead of `~/.bash_profile`.
+    **Ubuntu and Fedora note**: Modify your `~/.bashrc` file instead of `~/.bash_profile`.
     **Proxy note**: If you use a proxy, export `http_proxy` and `HTTPS_PROXY` too.
 
 3. **Add `pyenv init` to your shell** to enable shims and autocompletion.
@@ -205,7 +205,7 @@ easy to fork and contribute any changes back upstream.
     ```sh
     $ echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.bash_profile
     ```
-    **Zsh note**: Modify your `~/.zshenv` file instead of `~/.bash_profile`.  
+    **Zsh note**: Modify your `~/.zshenv` file instead of `~/.bash_profile`.
     **Ubuntu and Fedora note**: Modify your `~/.bashrc` file instead of `~/.bash_profile`.
 
     **General warning**: There are some systems where the `BASH_ENV` variable is configured
@@ -219,7 +219,12 @@ easy to fork and contribute any changes back upstream.
     ```sh
     $ exec "$SHELL"
     ```
-5. **Install Python versions into `$(pyenv root)/versions`.**
+
+5. **Install Python build dependencies** before attempting to install a new Python version.  The
+   [pyenv wiki](https://github.com/pyenv/pyenv/wiki) provides suggested installation packages
+   and commands for various operating systems.
+
+6. **Install Python versions into `$(pyenv root)/versions`.**
    For example, to download and install Python 2.7.8, run:
     ```sh
     $ pyenv install 2.7.8
@@ -281,10 +286,10 @@ uninstall from the system.
 
         brew uninstall pyenv
 
-### Homebrew on Mac OS X
+### Homebrew on macOS
 
-You can also install pyenv using the [Homebrew](http://brew.sh)
-package manager for Mac OS X.
+You can also install pyenv using the [Homebrew](https://brew.sh)
+package manager for macOS.
 
     $ brew update
     $ brew install pyenv
@@ -381,3 +386,11 @@ tracker](https://github.com/pyenv/pyenv/issues).
 
   [pyenv-virtualenv]: https://github.com/pyenv/pyenv-virtualenv#readme
   [hooks]: https://github.com/pyenv/pyenv/wiki/Authoring-plugins#pyenv-hooks
+
+### Version History
+
+See [CHANGELOG.md](CHANGELOG.md).
+
+### License
+
+[The MIT License](LICENSE)

@@ -14,7 +14,7 @@
 #   -g/--debug       Build a debug version
 #
 
-PYTHON_BUILD_VERSION="20160602"
+PYTHON_BUILD_VERSION="20180424"
 
 OLDIFS="$IFS"
 
@@ -60,6 +60,7 @@ resolve_link() {
 }
 
 abs_dirname() {
+  local cwd="$(pwd)"
   local path="$1"
 
   # Use a subshell to avoid modifying the current path
@@ -72,6 +73,7 @@ abs_dirname() {
 
   pwd
   )
+# cd "$cwd"
 }
 
 capitalize() {
@@ -154,6 +156,9 @@ num_cpu_cores() {
   case "$(uname -s)" in
   Darwin | *BSD )
     num="$(sysctl -n hw.ncpu 2>/dev/null || true)"
+    ;;
+  SunOS )
+    num="$(getconf NPROCESSORS_ONLN 2>/dev/null || true)"
     ;;
   * )
     num="$({ getconf _NPROCESSORS_ONLN ||
@@ -325,16 +330,27 @@ http() {
   local file="$3"
   [ -n "$url" ] || return 1
 
-  if type aria2c &>/dev/null; then
-    "http_${method}_aria2c" "$url" "$file"
-  elif type curl &>/dev/null; then
-    "http_${method}_curl" "$url" "$file"
-  elif type wget &>/dev/null; then
-    "http_${method}_wget" "$url" "$file"
+  local http_client
+  if [ -n "${PYTHON_BUILD_HTTP_CLIENT}" ]; then
+    http_client="http_${method}_${PYTHON_BUILD_HTTP_CLIENT}"
   else
-    echo "error: please install \`aria2c\`, \`curl\` or \`wget\` and try again" >&2
-    exit 1
+    if type aria2c &>/dev/null; then
+      http_client="http_${method}_aria2c"
+    elif type curl &>/dev/null; then
+      http_client="http_${method}_curl"
+    elif type wget &>/dev/null; then
+      # SSL Certificate error with older wget that does not support Server Name Indication (#60)
+      if [[ "$(wget --version 2>/dev/null || true)" = "GNU Wget 1.1"[0-3]* ]]; then
+        echo "python-build: wget (< 1.14) doesn't support Server Name Indication. Please install curl (>= 7.18.1) and try again" >&2
+        return 1
+      fi
+      http_client="http_${method}_wget"
+    else
+      echo "error: please install \`aria2c\`, \`curl\` or \`wget\` and try again" >&2
+      exit 1
+    fi
   fi
+  "${http_client}" "$url" "$file"
 }
 
 http_head_aria2c() {
@@ -1060,6 +1076,26 @@ build_package_pypy_builder() {
   build_package_pypy
 }
 
+activepython_architecture() {
+  case "$(uname -s)" in
+  "Darwin" ) echo "macosx10.9-i386-x86_64" ;;
+  "Linux" )
+    case "$(uname -m)" in
+    "i368" | "i486" | "i586" | "i686" | "i786" ) echo "linux-x86" ;;
+    "x86_64" ) echo "linux-x86_64" ;;
+    * ) return 1 ;;
+    esac
+    ;;
+  * ) return 1 ;;
+  esac
+}
+
+build_package_activepython() {
+  local package_name="$1"
+  { bash "install.sh" --install-dir "${PREFIX_PATH}"
+  } >&4 2>&1
+}
+
 anaconda_architecture() {
   case "$(uname -s)" in
   "Darwin" ) echo "MacOSX-x86_64" ;;
@@ -1155,7 +1191,7 @@ fix_rbx_irb() {
 
 require_java7() {
   local version="$(java -version 2>&1 | grep '\(java\|openjdk\) version' | head -1)"
-  if [[ $version != *1.[789]* ]]; then
+  if [[ $version != *[789]* ]]; then
     colorize 1 "ERROR" >&3
     echo ": Java 7 required. Please install a 1.7-compatible JRE." >&3
     return 1
@@ -1353,6 +1389,17 @@ require_distro() {
   return 1
 }
 
+require_osx_version() {
+  function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
+
+  local required_version="$@"
+  local osx_version="$(sw_vers -productVersion)"
+  if [[ $(version $osx_version) -ge $(version $required_version) ]]; then
+    return 0
+  fi
+  return 1
+}
+
 configured_with_package_dir() {
   local package_var_name="$(capitalize "$1")"
   shift 1
@@ -1448,6 +1495,7 @@ use_homebrew_openssl() {
   local ssldir="$(brew --prefix openssl 2>/dev/null || true)"
   if [ -d "$ssldir" ]; then
     echo "python-build: use openssl from homebrew"
+    export PKG_CONFIG_PATH="$ssldir/lib/pkgconfig/:${PKG_CONFIG_PATH}"
     export CPPFLAGS="-I$ssldir/include ${CPPFLAGS}"
     export LDFLAGS="-L$ssldir/lib ${LDFLAGS}"
   else
@@ -1466,9 +1514,15 @@ build_package_mac_openssl() {
   export CPPFLAGS="-I${OPENSSL_PREFIX_PATH}/include ${CPPFLAGS}"
   export LDFLAGS="-L${OPENSSL_PREFIX_PATH}/lib ${LDFLAGS}"
 
+  # Make sure pkg-config finds our build first.
+  export PKG_CONFIG_PATH="${OPENSSL_PREFIX_PATH}/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+
   # Hint OpenSSL that we prefer a 64-bit build.
   export KERNEL_BITS="64"
   OPENSSL_CONFIGURE="${OPENSSL_CONFIGURE:-./config}"
+
+  local nokerberos
+  [[ "$1" != openssl-1.0.* ]] || nokerberos=1
 
   # Compile a shared lib with zlib dynamically linked, no kerberos.
   package_option openssl configure --openssldir="$OPENSSLDIR" zlib-dynamic no-ssl2 no-ssl3 no-krb5 shared
@@ -1754,6 +1808,11 @@ build_package_verify_py37() {
   build_package_verify_py36 "$1" "${2:-3.7}"
 }
 
+# Post-install check for Python 3.8.x
+build_package_verify_py38() {
+  build_package_verify_py37 "$1" "${2:-3.8}"
+}
+
 build_package_ez_setup() {
   local ez_setup="ez_setup.py"
   rm -f "${ez_setup}"
@@ -1761,7 +1820,7 @@ build_package_ez_setup() {
       echo "Installing setuptools from ${EZ_SETUP}..." 1>&2
       cat "${EZ_SETUP}"
     else
-      [ -n "${EZ_SETUP_URL}" ] || EZ_SETUP_URL="https://bootstrap.pypa.io/ez_setup.py"
+      [ -n "${EZ_SETUP_URL}" ]
       echo "Installing setuptools from ${EZ_SETUP_URL}..." 1>&2
       http get "${EZ_SETUP_URL}"
     fi
@@ -1780,7 +1839,7 @@ build_package_get_pip() {
       echo "Installing pip from ${GET_PIP}..." 1>&2
       cat "${GET_PIP}"
     else
-      [ -n "${GET_PIP_URL}" ] || GET_PIP_URL="https://bootstrap.pypa.io/get-pip.py"
+      [ -n "${GET_PIP_URL}" ]
       echo "Installing pip from ${GET_PIP_URL}..." 1>&2
       http get "${GET_PIP_URL}"
     fi
@@ -1820,7 +1879,7 @@ usage() {
 
 list_definitions() {
   { for DEFINITION_DIR in "${PYTHON_BUILD_DEFINITIONS[@]}"; do
-      [ -d "$DEFINITION_DIR" ] && find "$DEFINITION_DIR" -maxdepth 1 -type f -print0 | xargs -0 -n 1 basename 2>/dev/null
+      [ -d "$DEFINITION_DIR" ] && ls "$DEFINITION_DIR" | grep -xv patches
     done
   } | sort_versions | uniq
 }
@@ -2051,12 +2110,6 @@ if [[ "$PYTHON_CONFIGURE_OPTS" != *"--enable-unicode="* ]]; then
   fi
 fi
 
-# SSL Certificate error with older wget that does not support Server Name Indication (#60)
-if ! command -v curl 1>/dev/null 2>&1 && [[ "$(wget --version 2>/dev/null || true)" = "GNU Wget 1.1"[0-3]* ]]; then
-  echo "python-build: wget (< 1.14) doesn't support Server Name Indication. Please install curl (>= 7.18.1) and try again" >&2
-  exit 1
-fi
-
 # Unset `PIP_REQUIRE_VENV` during build (#216)
 unset PIP_REQUIRE_VENV
 unset PIP_REQUIRE_VIRTUALENV
@@ -2069,11 +2122,39 @@ if [ -e "$HOME/.pydistutils.cfg" ]; then
 fi
 
 # Download specified version of ez_setup.py/get-pip.py (#202)
-if [ -n "${SETUPTOOLS_VERSION}" ]; then
-  EZ_SETUP_URL="https://bitbucket.org/pypa/setuptools/raw/${SETUPTOOLS_VERSION}/ez_setup.py"
+if [ -z "${EZ_SETUP_URL}" ]; then
+  if [ -n "${SETUPTOOLS_VERSION}" ]; then
+    EZ_SETUP_URL="https://bitbucket.org/pypa/setuptools/raw/${SETUPTOOLS_VERSION}/ez_setup.py"
+    unset SETUPTOOLS_VERSION
+  else
+    EZ_SETUP_URL="https://bootstrap.pypa.io/ez_setup.py"
+  fi
 fi
-if [ -n "${PIP_VERSION}" ]; then
-  GET_PIP_URL="https://raw.githubusercontent.com/pypa/pip/${PIP_VERSION}/contrib/get-pip.py"
+if [ -z "${GET_PIP_URL}" ]; then
+  if [ -n "${PIP_VERSION}" ]; then
+    { colorize 1 "WARNING"
+      echo ": Setting PIP_VERSION=${PIP_VERSION} is no longer supported and may cause failures during the install process."
+    } 1>&2
+    GET_PIP_URL="https://raw.githubusercontent.com/pypa/pip/${PIP_VERSION}/contrib/get-pip.py"
+    # Unset `PIP_VERSION` from environment before invoking `get-pip.py` to deal with "ValueError: invalid truth value" (pypa/pip#4528)
+    unset PIP_VERSION
+  else
+    # Use custom get-pip URL based on the target version (#1127)
+    case "${DEFINITION_PATH##*/}" in
+    2.6 | 2.6.* )
+      GET_PIP_URL="https://bootstrap.pypa.io/2.6/get-pip.py"
+      ;;
+    3.2 | 3.2.* )
+      GET_PIP_URL="https://bootstrap.pypa.io/3.2/get-pip.py"
+      ;;
+    3.3 | 3.3.* )
+      GET_PIP_URL="https://bootstrap.pypa.io/3.3/get-pip.py"
+      ;;
+    * )
+      GET_PIP_URL="https://bootstrap.pypa.io/get-pip.py"
+      ;;
+    esac
+  fi
 fi
 
 # Set MACOSX_DEPLOYMENT_TARGET from the product version of OS X (#219, #220)

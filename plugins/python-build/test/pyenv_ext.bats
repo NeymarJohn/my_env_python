@@ -5,11 +5,11 @@ export PYTHON_BUILD_CACHE_PATH="$TMP/cache"
 export MAKE=make
 export MAKE_OPTS="-j 2"
 export CC=cc
+export PYTHON_BUILD_HTTP_CLIENT="curl"
 
 export TMP_FIXTURES="$TMP/fixtures"
 
 setup() {
-  ensure_not_found_in_path aria2c
   mkdir -p "$INSTALL_ROOT"
   stub md5 false
   stub curl false
@@ -90,6 +90,19 @@ install_tmp_fixture() {
 
 resolve_link() {
   $(type -p greadlink readlink | head -1) "$1"
+}
+
+run_inline_definition_with_name() {
+  local definition_name="build-definition"
+  case "$1" in
+  "--name="* )
+    local definition_name="${1#--name=}"
+    shift 1
+    ;;
+  esac
+  local definition="${TMP}/${definition_name}"
+  cat > "$definition"
+  run python-build "$definition" "${1:-$INSTALL_ROOT}"
 }
 
 @test "apply built-in python patch before building" {
@@ -325,4 +338,44 @@ echo "\${MACOSX_DEPLOYMENT_TARGET}"
 OUT
   assert_success
   assert_output "10.4"
+}
+
+@test "use the default EZ_SETUP_URL by default" {
+  run_inline_definition <<OUT
+echo "\${EZ_SETUP_URL}"
+OUT
+  assert_output "https://bootstrap.pypa.io/ez_setup.py"
+  assert_success
+}
+
+@test "use the default GET_PIP_URL by default" {
+  run_inline_definition <<OUT
+echo "\${GET_PIP_URL}"
+OUT
+  assert_output "https://bootstrap.pypa.io/get-pip.py"
+  assert_success
+}
+
+@test "use the custom GET_PIP_URL for 2.6 versions" {
+  run_inline_definition_with_name --name=2.6 <<OUT
+echo "\${GET_PIP_URL}"
+OUT
+  assert_output "https://bootstrap.pypa.io/2.6/get-pip.py"
+  assert_success
+}
+
+@test "use the custom GET_PIP_URL for 3.2 versions" {
+  run_inline_definition_with_name --name=3.2 <<OUT
+echo "\${GET_PIP_URL}"
+OUT
+  assert_output "https://bootstrap.pypa.io/3.2/get-pip.py"
+  assert_success
+}
+
+@test "use the custom GET_PIP_URL for 3.3 versions" {
+  run_inline_definition_with_name --name=3.3 <<OUT
+echo "\${GET_PIP_URL}"
+OUT
+  assert_output "https://bootstrap.pypa.io/3.3/get-pip.py"
+  assert_success
 }
