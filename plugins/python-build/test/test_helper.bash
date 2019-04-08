@@ -1,14 +1,11 @@
 export TMP="$BATS_TEST_DIRNAME/tmp"
-export PYTHON_BUILD_CURL_OPTS=
-export PYTHON_BUILD_HTTP_CLIENT="curl"
+export RUBY_BUILD_CURL_OPTS=
+export RUBY_BUILD_HTTP_CLIENT="curl"
 
 if [ "$FIXTURE_ROOT" != "$BATS_TEST_DIRNAME/fixtures" ]; then
   export FIXTURE_ROOT="$BATS_TEST_DIRNAME/fixtures"
   export INSTALL_ROOT="$TMP/install"
-  PATH="/usr/bin:/bin:/usr/sbin:/sbin"
-  if [ "FreeBSD" = "$(uname -s)" ]; then
-    PATH="/usr/local/bin:$PATH"
-  fi
+  PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
   PATH="$BATS_TEST_DIRNAME/../bin:$PATH"
   PATH="$TMP/bin:$PATH"
   export PATH
