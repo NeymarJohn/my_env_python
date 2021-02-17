@@ -198,10 +198,6 @@ easy to fork and contribute any changes back upstream.
 
         git clone https://github.com/pyenv/pyenv.git ~/.pyenv
 
-   Optionally, try to compile dynamic bash extension to speed up pyenv. Don't
-   worry if it fails; pyenv will still work normally:
-
-        cd ~/.pyenv && src/configure && make -C src
 
 2. **Define environment variable `PYENV_ROOT`** to point to the path where
    pyenv repo is cloned and add `$PYENV_ROOT/bin` to your `$PATH` for access
@@ -368,11 +364,6 @@ opposed to this idea. Here's what `pyenv init` actually does:
 
 To see exactly what happens under the hood for yourself, run `pyenv init -`.
 
-If you don't want to use `pyenv init` and shims, you can still benefit
-from pyenv's ability to install Python versions for you. Just run 
-`pyenv install` and you will find versions installed in 
-`$(pyenv root)/versions`, which you can manually execute or symlink 
-as required.
 
 ### Uninstalling Python Versions
 
