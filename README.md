@@ -167,6 +167,10 @@ We'd recommend to install pyenv-virtualenv as well if you have some plan to play
 
 ## Installation
 
+### Prerequisites:
+
+For pyenv to install python correctly you should [**install the Python build dependencies**](https://github.com/pyenv/pyenv/wiki#suggested-build-environment).
+
 ### Homebrew on macOS
 
    1. Consider installing with [Homebrew](https://brew.sh)
@@ -194,6 +198,10 @@ easy to fork and contribute any changes back upstream.
 
         git clone https://github.com/pyenv/pyenv.git ~/.pyenv
 
+   Optionally, try to compile dynamic bash extension to speed up pyenv. Don't
+   worry if it fails; pyenv will still work normally:
+
+        cd ~/.pyenv && src/configure && make -C src
 
 2. **Define environment variable `PYENV_ROOT`** to point to the path where
    pyenv repo is cloned and add `$PYENV_ROOT/bin` to your `$PATH` for access
@@ -228,12 +236,26 @@ easy to fork and contribute any changes back upstream.
 3. **Add `pyenv init` to your shell** to enable shims and autocompletion.
    Please make sure `eval "$(pyenv init -)"` is placed toward the end of the shell
    configuration file since it manipulates `PATH` during the initialization.
-    ```sh
-    echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.bash_profile
-    ```
-    - **Zsh note**: Modify your `~/.zshrc` file instead of `~/.bash_profile`.
-    - **fish note**: Use `pyenv init - | source` instead of `eval (pyenv init -)`.
-    - **Ubuntu and Fedora note**: Modify your `~/.bashrc` file instead of `~/.bash_profile`.
+
+   - For **bash**:
+     ~~~ bash
+     echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.bash_profile
+     ~~~
+
+   - For **Ubuntu Desktop** and **Fedora**:
+     ~~~ bash
+     echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.bashrc
+     ~~~
+
+   - For **Zsh**:
+     ~~~ zsh
+     echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.zshrc
+     ~~~
+
+   - For **Fish shell**:
+     ~~~ fish
+     echo -e '\n\n# pyenv init\nif command -v pyenv 1>/dev/null 2>&1\n  pyenv init - | source\nend' >> ~/.config/fish/config.fish
+     ~~~
 
     **General warning**: There are some systems where the `BASH_ENV` variable is configured
     to point to `.bashrc`. On such systems you should almost certainly put the above mentioned line
@@ -346,6 +368,11 @@ opposed to this idea. Here's what `pyenv init` actually does:
 
 To see exactly what happens under the hood for yourself, run `pyenv init -`.
 
+If you don't want to use `pyenv init` and shims, you can still benefit
+from pyenv's ability to install Python versions for you. Just run 
+`pyenv install` and you will find versions installed in 
+`$(pyenv root)/versions`, which you can manually execute or symlink 
+as required.
 
 ### Uninstalling Python Versions
 

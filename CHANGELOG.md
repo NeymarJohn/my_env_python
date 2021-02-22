@@ -1,5 +1,55 @@
 ## Version History
 
+## 1.2.23
+
++ python-build: Add CPython v3.7.10 (#1818)
++ python-build: Add CPython v3.6.13 (#1817)
+* python-build: Add PyPy 3.7-c-jit-latest (#1812)
+* python-build: Add PyPy 3.7 (#1718, #1726, #1780)
+* python-build: Add miniconda3 4.9.2 (#1763)
+* python-build: Add miniconda3 4.8.3 (#1763)
+* python-build: Add miniconda3 4.8.2 (#1763)
+* python-build: Add Miniforge3-4.9.2 (#1782)
+* python-build: Fix download links for some PyPy and Stackless versions (#1692)
+* python-build: Add PYENV_DEBUG option (#1806)
+* python-build: Fix get-pip which dropped support for legacy Python (#1793)
+* pyenv-help: Fix `sed: RE error: illegal byte sequence` (#1714)
+* pyenv-versions: Fix not printing asterisk for current version in Bash 3 (#1815)
+* pyenv-prefix: "system" python - support cases where python3 is in PATH but not python (#1655)
+* pyenv-which: Added fallback to system executable (#1797)
+* pyenv-rehash: Use associative arrays for better performance on bash >= 4 (#1749)
+* pyenv-rehash: Try to sleep in 0.1 sec steps when acquiring lock (#1798)
+* pyenv: Use a better PS4 as recommended by Bash Hackers Wiki (#1810)
+
+## 1.2.22
+
++ python-build: Add LDFLAGS for zlib on macOS >= 1100 (#1711)
++ python-build: Add the CPython 3.9.1 (#1752)
++ python-build: Change order of LDFLAGS paths (#1754)
++ python-build: Docker config for testing python-build (#1548)
++ python-build: Put prerequisite for installation before install (#1750)
++ python-build: Add GraalPython 20.3 (#1736)
++ python-build: Add CPython 3.8.7
++ python-build: Added anaconda3-2020.11 (#1774)
++ python-build: Added arm64 architecture support in python-build for macOS  (#1775)
+
+## 1.2.21
+
+* python-build: Add CPython 3.9.0 (#1706)
+* python-build: Add CPython 3.8.6 (#1698)
+* python-build: Add CPython 3.7.9 (#1680)
+* python-build: Add CPython 3.6.12 (#1680)
+* python-build: Add CPython 3.5.10 (#1690)
+* python-build: Add Jython 2.7.2 (#1672)
+* python-build: Add Graalpython 20.1.0 (#1594)
+* python-build: Add Graalpython 20.2.0 (#1594)
+* python-build: Add Anaconda3-2020.07 (#1684)
+* python-build: Add micropython-1.13 (#1704)
+* python-build: Fix PyPy download links (#1682)
+* python-build: Support for `PYTHON_BUILD_MIRROR_URL` when checksums do not exist (#1673)
+* pyenv: Search for plugins in `PYENV_DIR` and `PYENV_ROOT` (#1697)
+* pyenv-help: Fix 'sed: RE error: illegal byte sequence' (#1670)
+
 ## 1.2.20
 
 * python-build: Add CPython 3.8.5 (#1667)
