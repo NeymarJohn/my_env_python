@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Summary: Configure the shell environment for pyenv
-# Usage: eval "$(pyenv init [-|--path] [--no-rehash] [<shell>])"
+# Usage: eval "$(pyenv init - [--no-rehash] [<shell>])"
 
 set -e
 [ -n "$PYENV_DEBUG" ] && set -x
@@ -8,7 +8,6 @@ set -e
 # Provide pyenv completions
 if [ "$1" = "--complete" ]; then
   echo -
-  echo --path
   echo --no-rehash
   echo bash
   echo fish
@@ -17,20 +16,15 @@ if [ "$1" = "--complete" ]; then
   exit
 fi
 
-mode="help"
+print=""
 no_rehash=""
 for args in "$@"
 do
   if [ "$args" = "-" ]; then
-    mode="print"
+    print=1
     shift
   fi
 
-  if [ "$args" = "--path" ]; then
-    mode="path"
-    shift
-  fi
-  
   if [ "$args" = "--no-rehash" ]; then
     no_rehash=1
     shift
@@ -49,33 +43,14 @@ fi
 
 root="${0%/*}/.."
 
-function main() {
-  case "$mode" in
-  "help")
-    help_
-    exit 1
-    ;;
-  "path")
-    print_path
-    exit 0
-    ;;
-  "print")
-    init_dirs
-    warn_path
-    print_env
-    print_completion
-    print_shell_function
-    exit 0
-    ;;
-  esac
-  # should never get here
-  exit 2
-}
-
-function help_() {
+if [ -z "$print" ]; then
   case "$shell" in
   bash )
-    profile='~/.bashrc'
+    if [ -f "${HOME}/.bashrc" ] && [ ! -f "${HOME}/.bash_profile" ]; then
+      profile='~/.bashrc'
+    else
+      profile='~/.bash_profile'
+    fi
     ;;
   zsh )
     profile='~/.zshrc'
@@ -103,70 +78,37 @@ function help_() {
       ;;
     esac
     echo
-    echo "# And the following to ~/.profile:"
-    echo
-    case "$shell" in
-    fish )
-      echo 'pyenv init --path | source'
-      ;;
-    * )
-      echo 'eval "$(pyenv init --path)"'
-      ;;
-    esac
-    echo
   } >&2
-}
 
-function init_dirs() {
-  mkdir -p "${PYENV_ROOT}/"{shims,versions}
-}
+  exit 1
+fi
 
-function print_path() {
-  # Need to use the login shell rather than the current one
-  case "$shell" in
-    fish )
-      echo "set -gx PATH '${PYENV_ROOT}/shims' \$PATH"
-      ;;
-    * )
-      echo 'export PATH="'${PYENV_ROOT}'/shims:${PATH}"'
-      ;;
-  esac
-}
+mkdir -p "${PYENV_ROOT}/"{shims,versions}
 
-function warn_path() {
-  if ! perl -ls0x3A -e 'while (<>) { chomp; ($_ eq $d) && exit 0; } exit 1' -- -d="${PYENV_ROOT}/shims" <<<"$PATH" ; then
-    echo 'echo '\''WARNING: `pyenv init -` no longer sets PATH.'\'
-    echo 'echo '\''Run `pyenv init` to see the necessary changes to make to your configuration.'\'
-  fi
-}
+case "$shell" in
+fish )
+  echo "set -gx PATH '${PYENV_ROOT}/shims' \$PATH"
+  echo "set -gx PYENV_SHELL $shell"
+;;
+* )
+  echo 'export PATH="'${PYENV_ROOT}'/shims:${PATH}"'
+  echo "export PYENV_SHELL=$shell"
+;;
+esac
 
-function print_env() {
-  case "$shell" in
-  fish )
-    echo "set -gx PYENV_SHELL $shell"
-    ;;
-  * )
-    echo "export PYENV_SHELL=$shell"
-    ;;
-  esac
-}
+completion="${root}/completions/pyenv.${shell}"
+if [ -r "$completion" ]; then
+  echo "source '$completion'"
+fi
 
-function print_completion() {
-  completion="${root}/completions/pyenv.${shell}"
-  if [ -r "$completion" ]; then
-    echo "source '$completion'"
-  fi
+if [ -z "$no_rehash" ]; then
+  echo 'command pyenv rehash 2>/dev/null'
+fi
 
-  if [ -z "$no_rehash" ]; then
-    echo 'command pyenv rehash 2>/dev/null'
-  fi
-}
-
-function print_shell_function() {
-  commands=(`pyenv-commands --sh`)
-  case "$shell" in
-  fish )
-    cat <<EOS
+commands=(`pyenv-commands --sh`)
+case "$shell" in
+fish )
+  cat <<EOS
 function pyenv
   set command \$argv[1]
   set -e argv[1]
@@ -179,24 +121,24 @@ function pyenv
   end
 end
 EOS
-    ;;
-  ksh )
-    cat <<EOS
+  ;;
+ksh )
+  cat <<EOS
 function pyenv {
   typeset command
 EOS
-    ;;
-  * )
-    cat <<EOS
+  ;;
+* )
+  cat <<EOS
 pyenv() {
   local command
 EOS
-    ;;
-  esac
+  ;;
+esac
 
-  if [ "$shell" != "fish" ]; then
-    IFS="|"
-    cat <<EOS
+if [ "$shell" != "fish" ]; then
+IFS="|"
+cat <<EOS
   command="\${1:-}"
   if [ "\$#" -gt 0 ]; then
     shift
@@ -204,15 +146,10 @@ EOS
 
   case "\$command" in
   ${commands[*]})
-    eval "\$(pyenv "sh-\$command" "\$@")"
-    ;;
+    eval "\$(pyenv "sh-\$command" "\$@")";;
   *)
-    command pyenv "\$command" "\$@"
-    ;;
+    command pyenv "\$command" "\$@";;
   esac
 }
 EOS
-  fi
-}
-
-main
+fi
