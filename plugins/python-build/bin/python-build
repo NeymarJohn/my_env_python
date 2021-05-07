@@ -851,21 +851,12 @@ build_package_jython_builder() {
 }
 
 build_package_pyston() {
-  # currently supported version 2.2 and upper
-  build_package_copy
-  mkdir -p "${PREFIX_PATH}/bin" "${PREFIX_PATH}/lib"
-  local bin
-  shopt -s nullglob
-  for bin in "bin/"*; do
-    if [ -f "${bin}" ] && [ -x "${bin}" ] && [ ! -L "${bin}" ]; then
-      case "${bin##*/}" in
-      "pyston"* )
-        ( cd "${PREFIX_PATH}/bin" && ln -fs "${bin##*/}" "python" )
-        ;;
-      esac
-    fi
-  done
-  shopt -u nullglob
+  mkdir -p "${PREFIX_PATH}/"
+  cp -fR . "${PREFIX_PATH}/"
+  chmod +x "${PREFIX_PATH}/"pyston
+  # FIXME ugly hack below adapted from
+  # https://github.com/dropbox/pyston/blob/master/docker/pyston/Dockerfile
+  ( cd "${PREFIX_PATH}/" && ./pyston virtualenv/virtualenv.py . )
 }
 
 build_package_ironpython() {
@@ -1755,11 +1746,6 @@ build_package_verify_py39() {
 # Post-install check for Python 3.10.x
 build_package_verify_py310() {
   build_package_verify_py39 "$1" "${2:-3.10}"
-}
-
-# Post-install check for Python 3.11.x
-build_package_verify_py311() {
-  build_package_verify_py310 "$1" "${2:-3.11}"
 }
 
 # Copy Tools/gdb/libpython.py to pythonX.Y-gdb.py (#1190)
