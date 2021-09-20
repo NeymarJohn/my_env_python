@@ -32,7 +32,8 @@ static_version="$(grep VERSION "$bats_bin" | head -1 | cut -d'"' -f 2)"
 
 @test "git remote doesn't match" {
   stub git \
-    'remote -v : echo origin https://github.com/Homebrew/homebrew.git'
+    'remote -v : echo origin https://github.com/Homebrew/homebrew.git' \
+    "describe --tags HEAD : echo v1984-12-gSHA"
   run python-build --version
   assert_success "python-build ${static_version}"
 }
