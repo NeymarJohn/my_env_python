@@ -84,8 +84,7 @@ assert_line() {
     for line in "${lines[@]}"; do
       if [ "$line" = "$1" ]; then return 0; fi
     done
-    flunk "expected line \`$1'" $'\n'\
-    "output: $output"
+    flunk "expected line \`$1'"
   fi
 }
 
@@ -99,8 +98,7 @@ refute_line() {
     local line
     for line in "${lines[@]}"; do
       if [ "$line" = "$1" ]; then
-        flunk "expected to not find line \`$line'" $'\n'\
-        "output: $output"
+        flunk "expected to not find line \`$line'"
       fi
     done
   fi
