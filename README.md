@@ -62,6 +62,7 @@ This project was forked from [rbenv](https://github.com/rbenv/rbenv) and
   * [Using Pyenv without shims](#using-pyenv-without-shims)
   * [Environment variables](#environment-variables)
 * **[Development](#development)**
+  * [Contributing](#contributing)**
   * [Version History](#version-history)
   * [License](#license)
 
@@ -388,6 +389,18 @@ please visit the wiki page about
 [Common Build Problems](https://github.com/pyenv/pyenv/wiki/Common-build-problems).
 
 
+#### Python versions with user-backed extended support
+
+For the following Python releases, Pyenv applies user-provided patches that add support for some newer environments.
+Though we don't actively maintain those patches, since existing releases never change,
+it's safe to assume that they will continue working until there are further incompatible changes
+in some later version of those environments.
+
+* *3.7.8-3.7.13, 3.8.4-3.8.12, 3.9.0-3.9.7* : XCode 13.3
+* *3.6.15* : MacOS 11+ and XCode 13.3
+* *2.7.18* : MacOS 10.15+ and Apple Silicon
+
+
 ### Switch between Python versions
 
 To select a Pyenv-installed Python as the version to use, run one
@@ -578,6 +591,9 @@ name | default | description
 `PYENV_DIR` | `$PWD` | Directory to start searching for `.python-version` files.
 `PYTHON_BUILD_ARIA2_OPTS` | | Used to pass additional parameters to [`aria2`](https://aria2.github.io/).<br>If the `aria2c` binary is available on `PATH`, pyenv uses `aria2c` instead of `curl` or `wget` to download the Python Source code. If you have an unstable internet connection, you can use this variable to instruct `aria2` to accelerate the download.<br>In most cases, you will only need to use `-x 10 -k 1M` as value to `PYTHON_BUILD_ARIA2_OPTS` environment variable
 
+See also [_Special environment variables_ in Python-Build's README](plugins/python-build/README.md#special-environment-variables)
+for environment variables that can be used to customize the build.
+
 ----
 
 
@@ -592,13 +608,19 @@ Tests are executed using [Bats](https://github.com/bats-core/bats-core):
     bats test
     bats/test/<file>.bats
 
-Please feel free to submit pull requests and file bugs on the [issue
+
+### Contributing
+
+Feel free to submit pull requests and file bugs on the [issue
 tracker](https://github.com/pyenv/pyenv/issues).
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for more details on submitting changes.
 
 
 ### Version History
 
 See [CHANGELOG.md](CHANGELOG.md).
+
 
 ### License
 
