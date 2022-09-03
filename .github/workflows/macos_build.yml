@@ -6,10 +6,10 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - 3.7.10
-          - 3.8.10
-          - 3.9.5
-          - 3.10.0
+          - 3.7.13
+          - 3.8.13
+          - 3.9.13
+          - 3.10.6
     runs-on: macos-10.15
     steps:
       - uses: actions/checkout@v2
@@ -27,7 +27,7 @@ jobs:
         run: |
           echo $PYENV_ROOT
           echo "$PYENV_ROOT/shims:$PYENV_ROOT/bin" >> $GITHUB_PATH
-          bin/pyenv install -v ${{ matrix.python-version }}
+          bin/pyenv install ${{ matrix.python-version }}
           bin/pyenv global ${{ matrix.python-version }}
           bin/pyenv rehash
       - run: python --version
