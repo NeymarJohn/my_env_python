@@ -515,41 +515,14 @@ make install DOGE="such wow"
 OUT
 }
 
-@test "configuring with dSYM in MacOS" {
+@test "setting MAKE_INSTALL_OPTS to a multi-word string" {
   cached_tarball "Python-3.6.2"
 
-  for i in {1..9}; do stub uname '-s : echo Darwin'; done
-  for i in {1..2}; do stub sw_vers '-productVersion : echo 1010'; done
-  for i in {1..4}; do stub brew false; done
+  for i in {1..8}; do stub uname '-s : echo Linux'; done
   stub_make_install
 
+  export MAKE_INSTALL_OPTS="DOGE=\"such wow\""
   run_inline_definition <<DEF
-export PYTHON_BUILD_CONFIGURE_WITH_DSYMUTIL=1
-install_package "Python-3.6.2" "http://python.org/ftp/python/3.6.2/Python-3.6.2.tar.gz"
-DEF
-  assert_success
-
-  unstub sw_vers
-  unstub uname
-  unstub brew
-  unstub make
-
-  assert_build_log <<OUT
-Python-3.6.2: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
-Python-3.6.2: --prefix=$INSTALL_ROOT --libdir=${TMP}/install/lib --with-dsymutil
-make -j 2
-make install
-OUT
-}
-
-@test "configuring with dSYM has no effect in non-MacOS" {
-  cached_tarball "Python-3.6.2"
-
-  for i in {1..9}; do stub uname '-s : echo Linux'; done
-  stub_make_install
-
-  run_inline_definition <<DEF
-export PYTHON_BUILD_CONFIGURE_WITH_DSYMUTIL=1
 install_package "Python-3.6.2" "http://python.org/ftp/python/3.6.2/Python-3.6.2.tar.gz"
 DEF
   assert_success
@@ -559,41 +532,9 @@ DEF
 
   assert_build_log <<OUT
 Python-3.6.2: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
-Python-3.6.2: --prefix=$INSTALL_ROOT --libdir=${TMP}/install/lib
+Python-3.6.2: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib
 make -j 2
-make install
-OUT
-}
-
-@test "tcl-tk is not linked from Homebrew when explicitly defined" {
-  cached_tarball "Python-3.6.2"
-
-  # python build
-  tcl_tk_version_long="8.6.10"
-  tcl_tk_version="${tcl_tk_version_long%.*}"
-
-  for i in {1..8}; do stub uname '-s : echo Darwin'; done
-  for i in {1..2}; do stub sw_vers '-productVersion : echo 1010'; done
-
-  for i in {1..4}; do stub brew false; done
-  stub_make_install
-
-  export PYTHON_CONFIGURE_OPTS="--with-tcltk-libs='-L${TMP}/custom-tcl-tk/lib -ltcl$tcl_tk_version -ltk$tcl_tk_version'"
-  run_inline_definition <<DEF
-install_package "Python-3.6.2" "http://python.org/ftp/python/3.6.2/Python-3.6.2.tar.gz"
-DEF
-  assert_success
-
-  unstub uname
-  unstub sw_vers
-  unstub brew
-  unstub make
-
-  assert_build_log <<OUT
-Python-3.6.2: CPPFLAGS="-I${TMP}/install/include " LDFLAGS="-L${TMP}/install/lib "
-Python-3.6.2: --prefix=$INSTALL_ROOT --libdir=$INSTALL_ROOT/lib --with-tcltk-libs=-L${TMP}/custom-tcl-tk/lib -ltcl8.6 -ltk8.6
-make -j 2
-make install
+make install DOGE="such wow"
 OUT
 }
 
