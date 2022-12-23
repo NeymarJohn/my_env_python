@@ -10,7 +10,7 @@ setup() {
 
 stub_python_build() {
   stub python-build "--lib : $BATS_TEST_DIRNAME/../bin/python-build --lib" "$@"
-  stub pyenv-latest ": false"
+  stub pyenv-latest " : false"
 }
 
 @test "install proper" {
@@ -20,26 +20,6 @@ stub_python_build() {
   assert_success "python-build 3.4.2 ${PYENV_ROOT}/versions/3.4.2"
 
   unstub python-build
-  unstub pyenv-hooks
-  unstub pyenv-rehash
-}
-
-@test "install proper multi versions" {
-  #stub python-build "--lib : $BATS_TEST_DIRNAME/../bin/python-build --lib" 'echo python-build "$@"' 'echo python-build "$@"'
-  #stub pyenv-latest ": false" ": false"
-  stub_python_build 'echo python-build "$@"' 'echo python-build "$@"'
-  stub pyenv-latest ": false"
-  stub pyenv-rehash 'true'
-
-  run pyenv-install 3.4.1 3.4.2
-  assert_success
-  assert_output <<OUT
-python-build 3.4.1 ${TMP}/pyenv/versions/3.4.1
-python-build 3.4.2 ${TMP}/pyenv/versions/3.4.2
-OUT
-
-  unstub python-build
-  unstub pyenv-latest
   unstub pyenv-hooks
   unstub pyenv-rehash
 }
@@ -57,45 +37,12 @@ OUT
   unstub pyenv-rehash
 }
 
-@test "install resolves a prefix with multi versions" {
-  stub_python_build 'echo python-build "$@"' 'echo python-build "$@"'
-  stub pyenv-latest '-q -k 3.4 : echo 3.4.2' '-q -k 3.5 : echo 3.5.2'
-  stub pyenv-rehash 'true'
-  pyenv-latest || true  # pass through the stub entry added by stub_python_build
-
-  run pyenv-install 3.4 3.5
-  assert_success <<OUT
-python-build 3.4.2 ${PYENV_ROOT}/versions/3.4.2
-python-build 3.5.2 ${PYENV_ROOT}/versions/3.5.2
-OUT
-
-
-  unstub python-build
-  unstub pyenv-hooks
-  unstub pyenv-rehash
-}
-
 @test "install pyenv local version by default" {
   stub_python_build 'echo python-build "$1"'
   stub pyenv-local 'echo 3.4.2'
 
   run pyenv-install
   assert_success "python-build 3.4.2"
-
-  unstub python-build
-  unstub pyenv-local
-}
-
-@test "install pyenv local multi versions by default" {
-  stub_python_build 'echo python-build "$1"' 'echo python-build "$1"'
-  stub pyenv-local 'printf "%s\n%s\n" 3.4.2 3.4.1'
-  stub pyenv-latest ": false"
-
-  run pyenv-install
-  assert_success <<OUT
-python-build 3.4.2"
-python-build 3.4.1"
-OUT
 
   unstub python-build
   unstub pyenv-local
@@ -222,23 +169,22 @@ ${PYENV_ROOT}/plugins/foo/share/python-build
 OUT
 }
 
-@test "not enough arguments for pyenv-install if no local version" {
+@test "not enough arguments for pyenv-install" {
   stub_python_build
   stub pyenv-help 'install : true'
 
   run pyenv-install
   assert_failure
   unstub pyenv-help
-  assert_output ""
 }
 
-@test "multi arguments for pyenv-install" {
+@test "too many arguments for pyenv-install" {
   stub_python_build
   stub pyenv-help 'install : true'
 
   run pyenv-install 3.4.1 3.4.2
-  assert_success
-  assert_output ""
+  assert_failure
+  unstub pyenv-help
 }
 
 @test "show help for pyenv-install" {
