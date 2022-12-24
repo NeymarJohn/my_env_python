@@ -233,9 +233,7 @@ install_package_using() {
   make_package "${make_args[@]}"
   popd >&4
 
-  { echo "Installed ${package_name} to ${PREFIX_PATH}"
-    echo
-  } >&2
+  echo "Installed ${package_name} to ${PREFIX_PATH}" >&2
 }
 
 make_package() {
@@ -940,7 +938,13 @@ build_package_micropython() {
 
 pypy_architecture() {
   case "$(uname -s)" in
-  "Darwin" ) echo "osx64" ;;
+  "Darwin" )
+    case "$(uname -m)" in
+    "arm64" ) echo "osarm64" ;;
+    "x86_64" ) echo "osx64" ;;
+    * ) return 1 ;;
+    esac
+    ;;
   "Linux" )
     case "$(uname -m)" in
     "armel" ) echo "linux-armel" ;;
