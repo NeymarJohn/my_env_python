@@ -200,7 +200,7 @@ class CondaVersion(NamedTuple):
                 return PyVersion.PY37
             return PyVersion.PY36
 
-        raise ValueError(self.flavor)
+        raise ValueError(flavor)
 
 
 class CondaSpec(NamedTuple):
